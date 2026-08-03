@@ -265,6 +265,52 @@ public enum MessageKey {
     CHANGE_PASSWORD_EXPIRED("email.change_password_expired"),
 
     // -------------------------------------------------------------------------
+    // Email verification (ownership check before playing)
+    // -------------------------------------------------------------------------
+
+    /** A verification code has been sent to %email. It is valid for %validity minutes. */
+    EMAIL_VERIFICATION_SENT("email_verification.sent", "%email", "%validity"),
+
+    /** Please wait %time seconds before requesting another code. */
+    EMAIL_VERIFICATION_RESEND_COOLDOWN("email_verification.resend_cooldown", "%time"),
+
+    /** The mail system is busy. Please try again in a moment. */
+    EMAIL_VERIFICATION_GLOBAL_COOLDOWN("email_verification.global_cooldown"),
+
+    /** Your email address has been verified successfully! */
+    EMAIL_VERIFICATION_SUCCESS("email_verification.success"),
+
+    /** Wrong verification code. Attempts remaining: %count */
+    EMAIL_VERIFICATION_WRONG_CODE("email_verification.wrong_code", "%count"),
+
+    /** Too many wrong verification codes. */
+    EMAIL_VERIFICATION_MAX_ATTEMPTS_KICK("email_verification.max_attempts_kick"),
+
+    /** You took too long to verify your email address. */
+    EMAIL_VERIFICATION_TIMEOUT_KICK("email_verification.timeout_kick"),
+
+    /** Email verification canceled. */
+    EMAIL_VERIFICATION_CANCEL_KICK("email_verification.cancel_kick"),
+
+    /** The verification email could not be sent. Please try again or contact an administrator. */
+    EMAIL_VERIFICATION_SEND_FAILED("email_verification.send_failed"),
+
+    /** Please verify your email address (%email); a code was sent to it. */
+    EMAIL_VERIFICATION_REQUIRED("email_verification.required", "%email"),
+
+    /** You must bind an email address to play. */
+    EMAIL_VERIFICATION_BINDING_REQUIRED("email_verification.binding_required"),
+
+    /** Your email address has been updated to %email; a new verification code has been sent. */
+    EMAIL_VERIFICATION_EMAIL_CHANGED("email_verification.email_changed", "%email"),
+
+    /** Email verification admin action completed. */
+    EMAIL_VERIFICATION_ADMIN_SUCCESS("email_verification.admin_success"),
+
+    /** Usage: /email verify &lt;code | resend | setemail &lt;email&gt;&gt; */
+    USAGE_EMAIL_VERIFY("email_verification.usage"),
+
+    // -------------------------------------------------------------------------
     // Recovery
     // -------------------------------------------------------------------------
 

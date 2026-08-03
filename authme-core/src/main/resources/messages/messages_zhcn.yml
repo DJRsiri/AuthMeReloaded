@@ -107,6 +107,23 @@ email:
     confirm_code_expired: '&c未找到待确认的邮箱验证。请重新开始流程。'
     confirm_success: '&2邮箱地址已确认并保存至您的账号！'
 
+# Email verification (ownership check before playing)
+email_verification:
+  sent: '&2验证码已发送至 &f%email&2，%validity 分钟内有效。'
+  resend_cooldown: '&c请等待 %time 秒后再重新获取验证码。'
+  global_cooldown: '&c邮件系统繁忙，请稍后再试。'
+  success: '&2邮箱验证成功！'
+  wrong_code: '&c验证码错误，剩余尝试次数：%count'
+  max_attempts_kick: '&c验证码错误次数过多。'
+  timeout_kick: '&c邮箱验证超时，请重新进入服务器。'
+  cancel_kick: '&c邮箱验证已取消。'
+  send_failed: '&c验证邮件发送失败，请使用 /email verify resend 重试或联系管理员。'
+  required: '&3请验证你的邮箱（&f%email&3）。验证码已发送，使用 &f/email verify <验证码>&3 提交；重新发送：&f/email verify resend'
+  binding_required: '&3你需要绑定邮箱才能游玩，请使用 &f/email verify setemail <邮箱>&3 绑定。'
+  email_changed: '&2邮箱已更新为 &f%email&2，新的验证码已发送。'
+  admin_success: '&2操作完成。'
+  usage: '&c用法：/email verify <验证码 | resend | setemail <邮箱>>'
+
 # Password recovery by email
 recovery:
     forgot_password_hint: '&8[&6玩家系统&8] &c忘了你的密码？请输入：“/email recovery <你的邮箱>”'

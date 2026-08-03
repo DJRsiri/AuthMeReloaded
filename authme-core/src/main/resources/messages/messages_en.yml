@@ -106,6 +106,23 @@ email:
   confirm_code_expired: '&cNo pending email confirmation found. Please start the process again.'
   confirm_success: '&2Email address confirmed and saved to your account!'
 
+# Email verification (ownership check before playing)
+email_verification:
+  sent: '&2A verification code has been sent to &f%email&2. It is valid for %validity minutes.'
+  resend_cooldown: '&cPlease wait %time seconds before requesting another code.'
+  global_cooldown: '&cThe mail system is busy. Please try again in a moment.'
+  success: '&2Your email address has been verified successfully!'
+  wrong_code: '&cWrong verification code. Attempts remaining: %count'
+  max_attempts_kick: '&cToo many wrong verification codes.'
+  timeout_kick: '&cYou took too long to verify your email address.'
+  cancel_kick: '&cEmail verification canceled.'
+  send_failed: '&cThe verification email could not be sent. Please try again with /email verify resend or contact an administrator.'
+  required: '&3Please verify your email address (&f%email&3). A code was sent to it - submit it with: &f/email verify <code>&3. To resend: &f/email verify resend'
+  binding_required: '&3You must bind an email address to play. Set it with: &f/email verify setemail <email>'
+  email_changed: '&2Your email address has been updated to &f%email&2. A new verification code has been sent.'
+  admin_success: '&2Done.'
+  usage: '&cUsage: /email verify <code | resend | setemail <email>>'
+
 # Password recovery by email
 recovery:
   forgot_password_hint: '&3Forgot your password? Please use the command: /email recovery <yourEmail>'
