@@ -3,6 +3,7 @@ package fr.xephi.authme.settings.properties;
 import ch.jalu.configme.Comment;
 import ch.jalu.configme.SettingsHolder;
 import ch.jalu.configme.properties.Property;
+import fr.xephi.authme.service.EmailVerificationSendFailureAction;
 
 import java.util.List;
 
@@ -89,6 +90,44 @@ public final class EmailSettings implements SettingsHolder {
               "set to false to restore the old behavior with a self-signed certificate."})
     public static final Property<Boolean> SSL_CHECK_SERVER_IDENTITY =
         newProperty("Email.sslCheckServerIdentity", true);
+
+    @Comment({"Require players to verify their email address with a code sent by mail",
+              "before they can play? Requires the SMTP settings above to be complete."})
+    public static final Property<Boolean> VERIFICATION_ENABLED =
+        newProperty("Email.verification.enabled", false);
+
+    @Comment("Length of the numeric email verification code")
+    public static final Property<Integer> VERIFICATION_CODE_LENGTH =
+        newProperty("Email.verification.codeLength", 6);
+
+    @Comment("Minutes an email verification code remains valid")
+    public static final Property<Integer> VERIFICATION_CODE_VALIDITY_MINUTES =
+        newProperty("Email.verification.codeValidityMinutes", 10);
+
+    @Comment("Cooldown in milliseconds before the same player can request another verification code")
+    public static final Property<Long> VERIFICATION_PERSONAL_COOLDOWN_MS =
+        newProperty("Email.verification.personalResendCooldownMs", 60_000L);
+
+    @Comment({"Global cooldown in milliseconds between any two verification mails.",
+              "While active, other players' send requests are rejected."})
+    public static final Property<Long> VERIFICATION_GLOBAL_COOLDOWN_MS =
+        newProperty("Email.verification.globalSendCooldownMs", 1_000L);
+
+    @Comment("Maximum wrong code attempts before the player is kicked. 0 = unlimited")
+    public static final Property<Integer> VERIFICATION_MAX_ATTEMPTS =
+        newProperty("Email.verification.maxAttempts", 5);
+
+    @Comment("Seconds a player may stay in the email verification gate before being kicked")
+    public static final Property<Integer> VERIFICATION_TIMEOUT_SECONDS =
+        newProperty("Email.verification.timeoutSeconds", 300);
+
+    @Comment({"Action when the verification mail could not be sent:",
+              "RETRY = keep the player in the gate so he can retry,",
+              "KICK = kick the player,",
+              "ALLOW = let the player play this time (email stays unverified)"})
+    public static final Property<EmailVerificationSendFailureAction> VERIFICATION_SEND_FAILURE_ACTION =
+        newProperty(EmailVerificationSendFailureAction.class, "Email.verification.sendFailureAction",
+            EmailVerificationSendFailureAction.RETRY);
 
     private EmailSettings() {
     }
