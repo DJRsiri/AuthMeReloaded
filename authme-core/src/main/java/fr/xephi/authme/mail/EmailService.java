@@ -109,6 +109,34 @@ public class EmailService {
     }
 
     /**
+     * Sends an email with a registration email verification code.
+     *
+     * @param name the name of the player
+     * @param mailAddress the player's email
+     * @param code the verification code
+     * @param validityMinutes how many minutes the code remains valid
+     * @return true if email could be sent, false otherwise
+     */
+    public boolean sendEmailVerificationMail(String name, String mailAddress, String code, int validityMinutes) {
+        if (!hasAllInformation()) {
+            logger.warning("Cannot send email verification mail: not all email settings are complete");
+            return false;
+        }
+
+        HtmlEmail email;
+        try {
+            email = sendMailSsl.initializeMail(mailAddress);
+        } catch (EmailException e) {
+            logger.logException("Failed to create email verification mail with the given settings:", e);
+            return false;
+        }
+
+        String mailText = replaceTagsForVerificationEmail(
+            settings.getVerificationEmailMessage(), name, code, validityMinutes);
+        return sendMailSsl.sendEmail(mailText, email);
+    }
+
+    /**
      * Sends an email to the new address with a code to confirm the address change.
      *
      * @param name  the name of the player
@@ -116,8 +144,7 @@ public class EmailService {
      * @param code  the confirmation code
      * @return true if email could be sent, false otherwise
      */
-    public boolean sendEmailConfirmationMail(String name, String email, String code) {
-        if (!hasAllInformation()) {
+    public boolean sendEmailConfirmationMail(String name, String email, String code) {        if (!hasAllInformation()) {
             logger.warning("Cannot send email confirmation: not all email settings are complete");
             return false;
         }

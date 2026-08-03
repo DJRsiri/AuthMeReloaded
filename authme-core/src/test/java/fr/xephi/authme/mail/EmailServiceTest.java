@@ -162,6 +162,43 @@ class EmailServiceTest {
     }
 
     @Test
+    void shouldSendEmailVerificationMail() throws EmailException {
+        // given
+        given(settings.getProperty(PluginSettings.SERVER_NAME)).willReturn("serverName");
+        given(settings.getVerificationEmailMessage())
+            .willReturn("Hi <playername />, your code on <servername /> is <generatedcode />"
+                + " (valid <minutesvalid /> minutes)");
+        HtmlEmail email = mock(HtmlEmail.class);
+        given(sendMailSsl.hasAllInformation()).willReturn(true);
+        given(sendMailSsl.initializeMail(anyString())).willReturn(email);
+        given(sendMailSsl.sendEmail(anyString(), any(HtmlEmail.class))).willReturn(true);
+
+        // when
+        boolean result = emailService.sendEmailVerificationMail("Bobby", "bobby@example.com", "123456", 10);
+
+        // then
+        assertThat(result, equalTo(true));
+        verify(sendMailSsl).initializeMail("bobby@example.com");
+        ArgumentCaptor<String> messageCaptor = ArgumentCaptor.forClass(String.class);
+        verify(sendMailSsl).sendEmail(messageCaptor.capture(), eq(email));
+        assertThat(messageCaptor.getValue(),
+            equalTo("Hi Bobby, your code on serverName is 123456 (valid 10 minutes)"));
+    }
+
+    @Test
+    void shouldNotSendEmailVerificationMailWhenSettingsIncomplete() throws EmailException {
+        // given
+        given(sendMailSsl.hasAllInformation()).willReturn(false);
+
+        // when
+        boolean result = emailService.sendEmailVerificationMail("Bobby", "bobby@example.com", "123456", 10);
+
+        // then
+        assertThat(result, equalTo(false));
+        verify(sendMailSsl, never()).initializeMail(anyString());
+    }
+
+    @Test
     void shouldHandleFailureToSendRecoveryCode() throws EmailException {
         // given
         given(settings.getProperty(SecuritySettings.RECOVERY_CODE_HOURS_VALID)).willReturn(7);
