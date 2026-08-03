@@ -136,6 +136,14 @@ public interface DataSource extends Reloadable {
     boolean updateEmail(PlayerAuth auth);
 
     /**
+     * Update the email verification flag of the PlayerAuth in the data source.
+     *
+     * @param auth The PlayerAuth whose email verification flag should be updated
+     * @return True upon success, false upon failure
+     */
+    boolean updateEmailVerified(PlayerAuth auth);
+
+    /**
      * Close the underlying connections to the data source.
      */
     void closeConnection();

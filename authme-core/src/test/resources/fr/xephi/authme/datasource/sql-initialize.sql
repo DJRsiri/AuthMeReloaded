@@ -16,6 +16,7 @@ CREATE TABLE authme (
     yaw FLOAT,
     pitch FLOAT,
     email VARCHAR(255),
+    email_verified INT NOT NULL DEFAULT '0',
     isLogged INT DEFAULT '0',
     realname VARCHAR(255) NOT NULL DEFAULT 'Player',
     salt varchar(255),

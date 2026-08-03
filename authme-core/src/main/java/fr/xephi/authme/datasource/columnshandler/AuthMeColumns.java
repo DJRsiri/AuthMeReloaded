@@ -33,6 +33,10 @@ public final class AuthMeColumns {
     public static final PlayerAuthColumn<String> EMAIL = createString(
         DatabaseSettings.MYSQL_COL_EMAIL, PlayerAuth::getEmail, DEFAULT_FOR_NULL);
 
+    public static final PlayerAuthColumn<Integer> EMAIL_VERIFIED = createInteger(
+        DatabaseSettings.MYSQL_COL_EMAIL_VERIFIED,
+        auth -> auth.isEmailVerified() ? 1 : 0, OPTIONAL);
+
     public static final PlayerAuthColumn<String> LAST_IP = createString(
         DatabaseSettings.MYSQL_COL_LAST_IP, PlayerAuth::getLastIp);
 

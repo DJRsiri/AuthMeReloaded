@@ -186,6 +186,15 @@ public class CacheDataSource implements DataSource, SqlConnectionSource {
     }
 
     @Override
+    public boolean updateEmailVerified(final PlayerAuth auth) {
+        boolean result = source.updateEmailVerified(auth);
+        if (result) {
+            cachedAuths.refresh(auth.getNickname());
+        }
+        return result;
+    }
+
+    @Override
     public boolean updatePremiumUuid(PlayerAuth auth) {
         boolean result = source.updatePremiumUuid(auth);
         if (result) {

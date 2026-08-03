@@ -178,6 +178,11 @@ public class SQLite extends AbstractSqlDataSource {
                     + " ADD COLUMN " + col.EMAIL + " VARCHAR(255);");
             }
 
+            if (isColumnMissing(md, col.EMAIL_VERIFIED)) {
+                st.executeUpdate("ALTER TABLE " + tableName
+                    + " ADD COLUMN " + col.EMAIL_VERIFIED + " INT NOT NULL DEFAULT '0';");
+            }
+
             if (isColumnMissing(md, col.IS_LOGGED)) {
                 st.executeUpdate("ALTER TABLE " + tableName
                     + " ADD COLUMN " + col.IS_LOGGED + " INT NOT NULL DEFAULT '0';");
@@ -386,6 +391,7 @@ public class SQLite extends AbstractSqlDataSource {
         return PlayerAuth.builder()
             .name(row.getString(col.NAME))
             .email(row.getString(col.EMAIL))
+            .emailVerified(row.getInt(col.EMAIL_VERIFIED) == 1)
             .realName(row.getString(col.REAL_NAME))
             .password(row.getString(col.PASSWORD), salt)
             .totpKey(row.getString(col.TOTP_KEY))
@@ -496,6 +502,11 @@ public class SQLite extends AbstractSqlDataSource {
     @Override
     public synchronized boolean updateEmail(PlayerAuth auth) {
         return super.updateEmail(auth);
+    }
+
+    @Override
+    public synchronized boolean updateEmailVerified(PlayerAuth auth) {
+        return super.updateEmailVerified(auth);
     }
 
     @Override

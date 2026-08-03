@@ -25,6 +25,7 @@ public final class Columns {
     public final String LASTLOC_YAW;
     public final String LASTLOC_PITCH;
     public final String EMAIL;
+    public final String EMAIL_VERIFIED;
     public final String ID;
     public final String IS_LOGGED;
     public final String HAS_SESSION;
@@ -49,6 +50,7 @@ public final class Columns {
         LASTLOC_YAW       = settings.getProperty(DatabaseSettings.MYSQL_COL_LASTLOC_YAW);
         LASTLOC_PITCH     = settings.getProperty(DatabaseSettings.MYSQL_COL_LASTLOC_PITCH);
         EMAIL             = settings.getProperty(DatabaseSettings.MYSQL_COL_EMAIL);
+        EMAIL_VERIFIED    = settings.getProperty(DatabaseSettings.MYSQL_COL_EMAIL_VERIFIED);
         ID                = settings.getProperty(DatabaseSettings.MYSQL_COL_ID);
         IS_LOGGED         = settings.getProperty(DatabaseSettings.MYSQL_COL_ISLOGGED);
         HAS_SESSION       = settings.getProperty(DatabaseSettings.MYSQL_COL_HASSESSION);

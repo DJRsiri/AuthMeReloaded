@@ -285,6 +285,25 @@ public abstract class AbstractDataSourceIntegrationTest {
     }
 
     @Test
+    void shouldUpdateEmailVerifiedFlag() {
+        // given
+        DataSource dataSource = getDataSource();
+        PlayerAuth userAuth = dataSource.getAuth("user");
+        assertThat(userAuth.isEmailVerified(), equalTo(false));
+        userAuth.setEmailVerified(true);
+        PlayerAuth invalidAuth = PlayerAuth.builder().name("invalid").emailVerified(true).build();
+
+        // when
+        boolean response1 = dataSource.updateEmailVerified(userAuth);
+        boolean response2 = dataSource.updateEmailVerified(invalidAuth);
+
+        // then
+        assertThat(response1, equalTo(true));
+        assertThat(response2, equalTo(false)); // no record modified
+        assertThat(dataSource.getAuth("user").isEmailVerified(), equalTo(true));
+    }
+
+    @Test
     void shouldCountAuths() {
         // given
         DataSource dataSource = getDataSource();
