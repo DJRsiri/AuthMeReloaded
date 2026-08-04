@@ -46,6 +46,11 @@ public enum AdminPermission implements PermissionNode {
     CHANGE_EMAIL("authme.admin.changemail"),
 
     /**
+     * Administrator command to manage players' email verification state.
+     */
+    EMAIL_VERIFY("authme.admin.emailverify"),
+
+    /**
      * Administrator command to see whether a player has enabled two-factor authentication.
      */
     VIEW_TOTP_STATUS("authme.admin.totpviewstatus"),

@@ -7,6 +7,7 @@ import fr.xephi.authme.command.executable.authme.AuthMeCommand;
 import fr.xephi.authme.command.executable.authme.BackupCommand;
 import fr.xephi.authme.command.executable.authme.ChangePasswordAdminCommand;
 import fr.xephi.authme.command.executable.authme.ConverterCommand;
+import fr.xephi.authme.command.executable.authme.EmailVerifyAdminCommand;
 import fr.xephi.authme.command.executable.authme.FirstSpawnCommand;
 import fr.xephi.authme.command.executable.authme.ForceLoginCommand;
 import fr.xephi.authme.command.executable.authme.GetEmailCommand;
@@ -306,6 +307,19 @@ public class CommandInitializer {
             .withArgument("email", "Player email", MANDATORY)
             .permission(AdminPermission.CHANGE_EMAIL)
             .executableCommand(SetEmailCommand.class)
+            .register();
+
+        // Register the emailverify command
+        CommandDescription.builder()
+            .parent(authmeBase)
+            .labels("emailverify", "emailverification")
+            .description("Manage email verification")
+            .detailedDescription("Bypass, force-set, or reset a player's email verification state.")
+            .withArgument("action", "bypass | set | unverify", MANDATORY)
+            .withArgument("player", "Player name", MANDATORY)
+            .withArgument("email", "Email address (for set)", OPTIONAL)
+            .permission(AdminPermission.EMAIL_VERIFY)
+            .executableCommand(EmailVerifyAdminCommand.class)
             .register();
 
         // Register the getip command
