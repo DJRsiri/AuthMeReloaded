@@ -44,6 +44,28 @@ public final class PaperDialogHelper {
         player.showDialog(createInGameCommandDialog(dialog, createRegisterTemplate(type, secondArg)));
     }
 
+    static void showEmailGateDialog(Player player, DialogWindowSpec dialog, String primaryTemplate) {
+        DialogBase base = DialogBase.builder(legacyComponent(dialog.title()))
+            .inputs(createInputs(dialog))
+            .body(createBody(dialog))
+            .afterAction(DialogBase.DialogAfterAction.CLOSE)
+            .build();
+
+        List<ActionButton> buttons = new ArrayList<>();
+        buttons.add(ActionButton.builder(legacyComponent(dialog.primaryButtonLabel()))
+            .action(DialogAction.commandTemplate(primaryTemplate))
+            .build());
+        for (DialogButtonSpec extra : dialog.extraButtons()) {
+            buttons.add(ActionButton.builder(legacyComponent(extra.label()))
+                .action(DialogAction.commandTemplate(extra.commandTemplate()))
+                .build());
+        }
+
+        player.showDialog(Dialog.create(factory -> factory.empty()
+            .base(base)
+            .type(DialogType.multiAction(buttons).build())));
+    }
+
     public static Dialog createPreJoinLoginDialog(DialogWindowSpec dialog) {
         DialogBase base = DialogBase.builder(legacyComponent(dialog.title()))
             .inputs(createInputs(dialog))

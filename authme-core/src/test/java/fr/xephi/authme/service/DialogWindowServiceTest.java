@@ -3,6 +3,8 @@ package fr.xephi.authme.service;
 import fr.xephi.authme.mail.EmailService;
 import fr.xephi.authme.message.MessageKey;
 import fr.xephi.authme.message.Messages;
+import fr.xephi.authme.platform.DialogButtonSpec;
+import fr.xephi.authme.platform.DialogInputSpec;
 import fr.xephi.authme.platform.DialogWindowSpec;
 import fr.xephi.authme.process.register.RegisterSecondaryArgument;
 import fr.xephi.authme.process.register.RegistrationType;
@@ -137,6 +139,65 @@ class DialogWindowServiceTest {
         assertThat(dialog.showSecondaryButton(), is(false));
         assertThat(dialog.canCloseWithEscape(), is(false));
         assertThat(dialog.inputs().stream().map(input -> input.id()).toList(), contains("password", "email"));
+    }
+
+    @Test
+    void shouldBuildEmailVerificationDialog() {
+        // given
+        Player player = org.mockito.Mockito.mock(Player.class);
+        given(commonService.retrieveSingleMessage(eq(player), any(MessageKey.class)))
+            .willAnswer(invocation -> invocation.getArgument(1, MessageKey.class).getKey());
+        given(commonService.retrieveSingleMessage(eq(player), eq(MessageKey.DIALOG_EMAIL_VERIFICATION_BODY),
+            eq("b@example.com"), eq("10")))
+            .willReturn("dialog.email_verification.body");
+
+        // when
+        DialogWindowSpec dialog = dialogWindowService.createEmailVerificationDialog(player, "b@example.com", 10);
+
+        // then
+        assertThat(dialog.title(), is("dialog.email_verification.title"));
+        assertThat(dialog.primaryButtonLabel(), is("dialog.email_verification.button"));
+        assertThat(dialog.body(), is("dialog.email_verification.body"));
+        assertThat(dialog.inputs().stream().map(DialogInputSpec::id).toList(), contains("code"));
+        assertThat(dialog.extraButtons().stream().map(DialogButtonSpec::commandTemplate).toList(),
+            contains("email verify resend", "email verify change", "email verify cancel"));
+    }
+
+    @Test
+    void shouldBuildEmailBindingDialog() {
+        // given
+        Player player = org.mockito.Mockito.mock(Player.class);
+        given(commonService.retrieveSingleMessage(eq(player), any(MessageKey.class)))
+            .willAnswer(invocation -> invocation.getArgument(1, MessageKey.class).getKey());
+
+        // when
+        DialogWindowSpec dialog = dialogWindowService.createEmailBindingDialog(player);
+
+        // then
+        assertThat(dialog.title(), is("dialog.email_binding.title"));
+        assertThat(dialog.primaryButtonLabel(), is("dialog.email_binding.button"));
+        assertThat(dialog.body(), is("dialog.email_binding.body"));
+        assertThat(dialog.inputs().stream().map(DialogInputSpec::id).toList(), contains("email"));
+        assertThat(dialog.extraButtons().stream().map(DialogButtonSpec::commandTemplate).toList(),
+            contains("email verify cancel"));
+    }
+
+    @Test
+    void shouldBuildEmailChangeForVerificationDialog() {
+        // given
+        Player player = org.mockito.Mockito.mock(Player.class);
+        given(commonService.retrieveSingleMessage(eq(player), any(MessageKey.class)))
+            .willAnswer(invocation -> invocation.getArgument(1, MessageKey.class).getKey());
+
+        // when
+        DialogWindowSpec dialog = dialogWindowService.createEmailChangeForVerificationDialog(player);
+
+        // then
+        assertThat(dialog.title(), is("dialog.email_change.title"));
+        assertThat(dialog.primaryButtonLabel(), is("dialog.email_change.button"));
+        assertThat(dialog.inputs().stream().map(DialogInputSpec::id).toList(), contains("email"));
+        assertThat(dialog.extraButtons().stream().map(DialogButtonSpec::commandTemplate).toList(),
+            contains("email verify back"));
     }
 
     @Test

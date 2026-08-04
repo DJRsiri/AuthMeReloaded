@@ -50,6 +50,18 @@ public interface DialogAdapter {
     }
 
     /**
+     * Shows an email verification gate dialog (verification, binding or email change) to the player.
+     * The dialog's primary button executes the given command template; additional buttons
+     * come from {@link DialogWindowSpec#extraButtons()}.
+     *
+     * @param player the player to show the dialog to
+     * @param dialog the resolved dialog text and UX options
+     * @param primaryCommandTemplate command template the primary button should execute
+     */
+    default void showEmailGateDialog(Player player, DialogWindowSpec dialog, String primaryCommandTemplate) {
+    }
+
+    /**
      * Closes any open dialog for the given player (e.g. after a force-login via the API).
      * Has no effect if no dialog is currently open or if dialogs are not supported on this platform.
      *

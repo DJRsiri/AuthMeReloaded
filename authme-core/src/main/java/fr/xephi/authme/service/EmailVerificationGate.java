@@ -4,6 +4,7 @@ import fr.xephi.authme.data.auth.PlayerAuth;
 import fr.xephi.authme.data.auth.PlayerCache;
 import fr.xephi.authme.data.limbo.LimboService;
 import fr.xephi.authme.message.MessageKey;
+import fr.xephi.authme.platform.DialogAdapter;
 import fr.xephi.authme.settings.properties.EmailSettings;
 import fr.xephi.authme.settings.properties.RegistrationSettings;
 import fr.xephi.authme.util.Utils;
@@ -27,17 +28,25 @@ public class EmailVerificationGate {
     private final BukkitService bukkitService;
     private final LimboService limboService;
     private final PlayerCache playerCache;
+    private final DialogAdapter dialogAdapter;
+    private final DialogWindowService dialogWindowService;
+    private final DialogStateService dialogStateService;
 
     private final Map<String, GateSession> sessions = new ConcurrentHashMap<>();
 
     @Inject
     EmailVerificationGate(EmailVerificationService verificationService, CommonService commonService,
-                          BukkitService bukkitService, LimboService limboService, PlayerCache playerCache) {
+                          BukkitService bukkitService, LimboService limboService, PlayerCache playerCache,
+                          DialogAdapter dialogAdapter, DialogWindowService dialogWindowService,
+                          DialogStateService dialogStateService) {
         this.verificationService = verificationService;
         this.commonService = commonService;
         this.bukkitService = bukkitService;
         this.limboService = limboService;
         this.playerCache = playerCache;
+        this.dialogAdapter = dialogAdapter;
+        this.dialogWindowService = dialogWindowService;
+        this.dialogStateService = dialogStateService;
     }
 
     /**
@@ -173,10 +182,63 @@ public class EmailVerificationGate {
         }
     }
 
+    /**
+     * Shows the gate dialog matching the player's state again (verification or binding).
+     * Used by {@code /email verify back} to return from the change-email dialog.
+     *
+     * @param player the player to show the dialog to
+     * @return true if the dialog was shown
+     */
+    public boolean showGateDialogAgain(Player player) {
+        if (!useDialogUi() || !isGated(player.getName())) {
+            return false;
+        }
+        showGateDialog(player);
+        return true;
+    }
+
+    /**
+     * Shows the change-email dialog to a gated player.
+     *
+     * @param player the player to show the dialog to
+     * @return true if the dialog was shown
+     */
+    public boolean showChangeEmailDialog(Player player) {
+        if (!useDialogUi() || !isGated(player.getName())) {
+            return false;
+        }
+        dialogAdapter.showEmailGateDialog(player,
+            dialogWindowService.createEmailChangeForVerificationDialog(player),
+            "email verify setemail $(email)");
+        dialogStateService.markDialogOpen(player);
+        return true;
+    }
+
     private void showGateDialog(Player player) {
-        // Wired in the dialog task: shows the verification / binding dialog when the
-        // platform supports dialogs and they are enabled. The chat hint from sendGateHint
-        // is the fallback and is always sent.
+        if (!useDialogUi()) {
+            return;
+        }
+        String name = player.getName().toLowerCase(Locale.ROOT);
+        bukkitService.runTaskLater(player, () -> {
+            if (!player.isOnline() || !isGated(name)) {
+                return;
+            }
+            PlayerAuth auth = playerCache.getAuth(name);
+            if (auth == null || Utils.isEmailEmpty(auth.getEmail())) {
+                dialogAdapter.showEmailGateDialog(player,
+                    dialogWindowService.createEmailBindingDialog(player), "email verify setemail $(email)");
+            } else {
+                int validity = commonService.getProperty(EmailSettings.VERIFICATION_CODE_VALIDITY_MINUTES);
+                dialogAdapter.showEmailGateDialog(player,
+                    dialogWindowService.createEmailVerificationDialog(player, auth.getEmail(), validity),
+                    "email verify $(code)");
+            }
+            dialogStateService.markDialogOpen(player);
+        }, 1L);
+    }
+
+    private boolean useDialogUi() {
+        return commonService.getProperty(RegistrationSettings.USE_DIALOG_UI) && dialogAdapter.isDialogSupported();
     }
 
     private static void cancelTasks(GateSession session) {

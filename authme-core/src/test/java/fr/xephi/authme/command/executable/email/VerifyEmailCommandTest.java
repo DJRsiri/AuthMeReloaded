@@ -151,6 +151,50 @@ class VerifyEmailCommandTest {
         verify(management).performEmailVerification(player, "submit", "123456");
     }
 
+    @Test
+    void shouldShowChangeEmailDialogForChangeArgument() {
+        // given
+        Player player = mockPlayer("Gated");
+        given(asyncEmailVerification.mayUse(player)).willReturn(true);
+        given(gate.showChangeEmailDialog(player)).willReturn(true);
+
+        // when
+        command.runCommand(player, Collections.singletonList("change"));
+
+        // then
+        verify(gate).showChangeEmailDialog(player);
+        verifyNoInteractions(management, commonService);
+    }
+
+    @Test
+    void shouldShowUsageWhenChangeDialogUnavailable() {
+        // given
+        Player player = mockPlayer("Bobby");
+        given(asyncEmailVerification.mayUse(player)).willReturn(true);
+        given(gate.showChangeEmailDialog(player)).willReturn(false);
+
+        // when
+        command.runCommand(player, Collections.singletonList("change"));
+
+        // then
+        verify(commonService).send(player, MessageKey.USAGE_EMAIL_VERIFY);
+        verifyNoInteractions(management);
+    }
+
+    @Test
+    void shouldReshowGateDialogForBackArgument() {
+        // given
+        Player player = mockPlayer("Gated");
+        given(asyncEmailVerification.mayUse(player)).willReturn(true);
+
+        // when
+        command.runCommand(player, Collections.singletonList("back"));
+
+        // then
+        verify(gate).showGateDialogAgain(player);
+        verifyNoInteractions(management, commonService);
+    }
+
     private static Player mockPlayer(String name) {
         Player player = mock(Player.class);
         given(player.getName()).willReturn(name);

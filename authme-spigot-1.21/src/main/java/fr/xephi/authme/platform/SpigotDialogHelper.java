@@ -65,6 +65,21 @@ final class SpigotDialogHelper {
                 new RunCommandAction(createRegisterTemplate(type, secondArg)))));
     }
 
+    static void showEmailGateDialog(Player player, DialogWindowSpec dialog, String primaryTemplate) {
+        DialogBase base = new DialogBase(toTextComponent(dialog.title()))
+            .inputs(createInputs(dialog))
+            .body(createBody(dialog))
+            .afterAction(DialogBase.AfterAction.CLOSE);
+
+        List<ActionButton> buttons = new ArrayList<>();
+        buttons.add(new ActionButton(toTextComponent(dialog.primaryButtonLabel()),
+            new RunCommandAction(primaryTemplate)));
+        for (DialogButtonSpec extra : dialog.extraButtons()) {
+            buttons.add(new ActionButton(toTextComponent(extra.label()), new RunCommandAction(extra.commandTemplate())));
+        }
+        player.showDialog(new MultiActionDialog(base, buttons.toArray(new ActionButton[0])));
+    }
+
     static void closeDialog(Player player) {
         player.clearDialog();
     }

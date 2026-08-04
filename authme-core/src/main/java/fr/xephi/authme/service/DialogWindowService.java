@@ -3,6 +3,7 @@ package fr.xephi.authme.service;
 import fr.xephi.authme.mail.EmailService;
 import fr.xephi.authme.message.MessageKey;
 import fr.xephi.authme.message.Messages;
+import fr.xephi.authme.platform.DialogButtonSpec;
 import fr.xephi.authme.platform.DialogInputSpec;
 import fr.xephi.authme.platform.DialogWindowSpec;
 import fr.xephi.authme.process.register.RegisterSecondaryArgument;
@@ -22,6 +23,7 @@ public class DialogWindowService {
 
     private static final int DEFAULT_MAX_INPUT_LENGTH = 100;
     private static final int TOTP_CODE_MAX_INPUT_LENGTH = 16;
+    private static final int VERIFICATION_CODE_MAX_INPUT_LENGTH = 16;
 
     @Inject
     private CommonService commonService;
@@ -106,6 +108,78 @@ public class DialogWindowService {
                                                  RegistrationType type,
                                                  RegisterSecondaryArgument secondArg) {
         return createRegisterDialogSpec(type, secondArg, key -> getPostJoinMessage(player, key), false, false);
+    }
+
+    /**
+     * Creates the spec for the email verification dialog shown to players in the verification gate.
+     *
+     * @param player the player the dialog is shown to
+     * @param email the email address the code was sent to
+     * @param validityMinutes how long the code is valid, in minutes
+     * @return the dialog spec
+     */
+    public DialogWindowSpec createEmailVerificationDialog(Player player, String email, int validityMinutes) {
+        Function<MessageKey, String> text = key -> getPostJoinMessage(player, key);
+        return new DialogWindowSpec(
+            text.apply(MessageKey.DIALOG_EMAIL_VERIFICATION_TITLE),
+            List.of(new DialogInputSpec("code", text.apply(MessageKey.DIALOG_EMAIL_VERIFICATION_CODE),
+                VERIFICATION_CODE_MAX_INPUT_LENGTH)),
+            text.apply(MessageKey.DIALOG_EMAIL_VERIFICATION_BUTTON),
+            text.apply(MessageKey.DIALOG_CANCEL_BUTTON),
+            false,
+            false,
+            null,
+            commonService.retrieveSingleMessage(player, MessageKey.DIALOG_EMAIL_VERIFICATION_BODY,
+                email, String.valueOf(validityMinutes)),
+            List.of(
+                new DialogButtonSpec(text.apply(MessageKey.DIALOG_EMAIL_VERIFICATION_RESEND_BUTTON),
+                    "email verify resend"),
+                new DialogButtonSpec(text.apply(MessageKey.DIALOG_EMAIL_VERIFICATION_CHANGE_BUTTON),
+                    "email verify change"),
+                new DialogButtonSpec(text.apply(MessageKey.DIALOG_CANCEL_BUTTON), "email verify cancel")));
+    }
+
+    /**
+     * Creates the spec for the email binding dialog shown to players without an email address.
+     *
+     * @param player the player the dialog is shown to
+     * @return the dialog spec
+     */
+    public DialogWindowSpec createEmailBindingDialog(Player player) {
+        Function<MessageKey, String> text = key -> getPostJoinMessage(player, key);
+        return new DialogWindowSpec(
+            text.apply(MessageKey.DIALOG_EMAIL_BINDING_TITLE),
+            List.of(new DialogInputSpec("email", text.apply(MessageKey.DIALOG_EMAIL_BINDING_EMAIL),
+                DEFAULT_MAX_INPUT_LENGTH)),
+            text.apply(MessageKey.DIALOG_EMAIL_BINDING_BUTTON),
+            text.apply(MessageKey.DIALOG_CANCEL_BUTTON),
+            false,
+            false,
+            null,
+            text.apply(MessageKey.DIALOG_EMAIL_BINDING_BODY),
+            List.of(new DialogButtonSpec(text.apply(MessageKey.DIALOG_CANCEL_BUTTON), "email verify cancel")));
+    }
+
+    /**
+     * Creates the spec for the dialog to change the email address before verification.
+     *
+     * @param player the player the dialog is shown to
+     * @return the dialog spec
+     */
+    public DialogWindowSpec createEmailChangeForVerificationDialog(Player player) {
+        Function<MessageKey, String> text = key -> getPostJoinMessage(player, key);
+        return new DialogWindowSpec(
+            text.apply(MessageKey.DIALOG_EMAIL_CHANGE_TITLE),
+            List.of(new DialogInputSpec("email", text.apply(MessageKey.DIALOG_EMAIL_BINDING_EMAIL),
+                DEFAULT_MAX_INPUT_LENGTH)),
+            text.apply(MessageKey.DIALOG_EMAIL_CHANGE_BUTTON),
+            text.apply(MessageKey.DIALOG_CANCEL_BUTTON),
+            false,
+            false,
+            null,
+            text.apply(MessageKey.DIALOG_EMAIL_BINDING_BODY),
+            List.of(new DialogButtonSpec(text.apply(MessageKey.DIALOG_EMAIL_CHANGE_BACK_BUTTON),
+                "email verify back")));
     }
 
     public DialogWindowSpec createPreJoinRegisterDialog(String playerName,

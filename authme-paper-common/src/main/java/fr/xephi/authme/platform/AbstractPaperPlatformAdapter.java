@@ -58,6 +58,11 @@ public abstract class AbstractPaperPlatformAdapter extends AbstractSpigotPlatfor
     }
 
     @Override
+    public void showEmailGateDialog(Player player, DialogWindowSpec dialog, String primaryCommandTemplate) {
+        PaperDialogHelper.showEmailGateDialog(player, dialog, primaryCommandTemplate);
+    }
+
+    @Override
     public void closeDialog(Player player) {
         if (DIALOG_AVAILABLE) {
             PaperDialogHelper.closeDialog(player);

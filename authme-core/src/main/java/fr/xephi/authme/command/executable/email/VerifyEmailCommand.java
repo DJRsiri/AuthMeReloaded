@@ -57,8 +57,12 @@ public class VerifyEmailCommand extends PlayerCommand {
                 }
                 break;
             case "change":
+                if (!gate.showChangeEmailDialog(player)) {
+                    commonService.send(player, MessageKey.USAGE_EMAIL_VERIFY);
+                }
+                break;
             case "back":
-                // Handled by the verification dialogs where supported; nothing to do in chat
+                gate.showGateDialogAgain(player);
                 break;
             default:
                 management.performEmailVerification(player, "submit", arguments.get(0));

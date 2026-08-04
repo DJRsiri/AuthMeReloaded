@@ -15,6 +15,7 @@ import java.util.Objects;
  * @param secondaryButtonCommand command template the secondary button should execute in post-join dialogs
  *                               (null for pre-join dialogs where the secondary button is a cancel action)
  * @param body optional translated body text shown below the title (null = no body)
+ * @param extraButtons additional buttons rendered after the primary one (may be empty)
  */
 public record DialogWindowSpec(String title,
                                List<DialogInputSpec> inputs,
@@ -23,7 +24,8 @@ public record DialogWindowSpec(String title,
                                boolean showSecondaryButton,
                                boolean canCloseWithEscape,
                                String secondaryButtonCommand,
-                               String body) {
+                               String body,
+                               List<DialogButtonSpec> extraButtons) {
 
     public DialogWindowSpec {
         Objects.requireNonNull(title, "title");
@@ -31,9 +33,10 @@ public record DialogWindowSpec(String title,
         Objects.requireNonNull(primaryButtonLabel, "primaryButtonLabel");
         Objects.requireNonNull(secondaryButtonLabel, "secondaryButtonLabel");
         inputs = List.copyOf(inputs);
+        extraButtons = List.copyOf(extraButtons);
     }
 
-    /** Convenience constructor without body text (body = null). */
+    /** Convenience constructor without body text and extra buttons. */
     public DialogWindowSpec(String title,
                             List<DialogInputSpec> inputs,
                             String primaryButtonLabel,
@@ -42,12 +45,25 @@ public record DialogWindowSpec(String title,
                             boolean canCloseWithEscape,
                             String secondaryButtonCommand) {
         this(title, inputs, primaryButtonLabel, secondaryButtonLabel,
-            showSecondaryButton, canCloseWithEscape, secondaryButtonCommand, null);
+            showSecondaryButton, canCloseWithEscape, secondaryButtonCommand, null, List.of());
+    }
+
+    /** Convenience constructor without extra buttons. */
+    public DialogWindowSpec(String title,
+                            List<DialogInputSpec> inputs,
+                            String primaryButtonLabel,
+                            String secondaryButtonLabel,
+                            boolean showSecondaryButton,
+                            boolean canCloseWithEscape,
+                            String secondaryButtonCommand,
+                            String body) {
+        this(title, inputs, primaryButtonLabel, secondaryButtonLabel,
+            showSecondaryButton, canCloseWithEscape, secondaryButtonCommand, body, List.of());
     }
 
     /** Returns a copy of this spec with the given body text (may be null). */
     public DialogWindowSpec withBody(String newBody) {
         return new DialogWindowSpec(title, inputs, primaryButtonLabel, secondaryButtonLabel,
-            showSecondaryButton, canCloseWithEscape, secondaryButtonCommand, newBody);
+            showSecondaryButton, canCloseWithEscape, secondaryButtonCommand, newBody, extraButtons);
     }
 }

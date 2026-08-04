@@ -195,6 +195,22 @@ dialog:
     body: '&7Enter your registered email address and a reset code will be sent to you.'
     email: '&fEmail Address'
     button: '&aSend Recovery Email'
+  email_verification:
+    title: '&6Email Verification'
+    body: '&7A verification code was sent to &f%email&7. It is valid for %validity minutes.'
+    code: '&fVerification Code'
+    button: '&aVerify'
+    resend_button: '&eResend Code'
+    change_button: '&eChange Email'
+  email_binding:
+    title: '&6Bind Email Address'
+    body: '&7No email address is bound to your account. Please enter one to continue.'
+    email: '&fEmail Address'
+    button: '&aBind and Send Code'
+  email_change:
+    title: '&6Change Email Address'
+    button: '&aSave and Send Code'
+    back_button: '&eBack'
 
   button:
     cancel: '&cCancel'

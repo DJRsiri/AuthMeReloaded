@@ -4,6 +4,8 @@ import fr.xephi.authme.data.auth.PlayerAuth;
 import fr.xephi.authme.data.auth.PlayerCache;
 import fr.xephi.authme.data.limbo.LimboService;
 import fr.xephi.authme.message.MessageKey;
+import fr.xephi.authme.platform.DialogAdapter;
+import fr.xephi.authme.platform.DialogWindowSpec;
 import fr.xephi.authme.settings.properties.EmailSettings;
 import fr.xephi.authme.settings.properties.RegistrationSettings;
 import org.bukkit.entity.Player;
@@ -23,6 +25,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 /**
@@ -46,12 +49,21 @@ class EmailVerificationGateTest {
     @Mock
     private PlayerCache playerCache;
 
+    @Mock
+    private DialogAdapter dialogAdapter;
+
+    @Mock
+    private DialogWindowService dialogWindowService;
+
+    @Mock
+    private DialogStateService dialogStateService;
+
     private EmailVerificationGate gate;
 
     @BeforeEach
     void createGate() {
         gate = new EmailVerificationGate(verificationService, commonService, bukkitService,
-            limboService, playerCache);
+            limboService, playerCache, dialogAdapter, dialogWindowService, dialogStateService);
     }
 
     @Test
@@ -85,6 +97,7 @@ class EmailVerificationGateTest {
         given(verificationService.hasPendingCode("pending")).willReturn(true);
         given(commonService.getProperty(EmailSettings.VERIFICATION_TIMEOUT_SECONDS)).willReturn(300);
         given(commonService.getProperty(RegistrationSettings.MESSAGE_INTERVAL)).willReturn(5);
+        given(commonService.getProperty(RegistrationSettings.USE_DIALOG_UI)).willReturn(false);
 
         // when
         gate.startGate(player, () -> { });
@@ -105,6 +118,7 @@ class EmailVerificationGateTest {
             .willReturn(EmailVerificationService.SendCodeResult.SENT);
         given(commonService.getProperty(EmailSettings.VERIFICATION_TIMEOUT_SECONDS)).willReturn(300);
         given(commonService.getProperty(RegistrationSettings.MESSAGE_INTERVAL)).willReturn(5);
+        given(commonService.getProperty(RegistrationSettings.USE_DIALOG_UI)).willReturn(false);
         Runnable resume = mock(Runnable.class);
 
         // when
@@ -129,6 +143,7 @@ class EmailVerificationGateTest {
         given(verificationService.hasPendingCode("done")).willReturn(true);
         given(commonService.getProperty(EmailSettings.VERIFICATION_TIMEOUT_SECONDS)).willReturn(300);
         given(commonService.getProperty(RegistrationSettings.MESSAGE_INTERVAL)).willReturn(5);
+        given(commonService.getProperty(RegistrationSettings.USE_DIALOG_UI)).willReturn(false);
         CancellableTask timeoutTask = mock(CancellableTask.class);
         CancellableTask reminderTask = mock(CancellableTask.class);
         given(bukkitService.runTaskLater(eq(player), any(Runnable.class), anyLong())).willReturn(timeoutTask);
@@ -156,6 +171,7 @@ class EmailVerificationGateTest {
         given(verificationService.hasPendingCode("slow")).willReturn(true);
         given(commonService.getProperty(EmailSettings.VERIFICATION_TIMEOUT_SECONDS)).willReturn(300);
         given(commonService.getProperty(RegistrationSettings.MESSAGE_INTERVAL)).willReturn(5);
+        given(commonService.getProperty(RegistrationSettings.USE_DIALOG_UI)).willReturn(false);
         given(commonService.retrieveSingleMessage(player, MessageKey.EMAIL_VERIFICATION_TIMEOUT_KICK))
             .willReturn("Too slow!");
         gate.startGate(player, () -> { });
@@ -182,6 +198,7 @@ class EmailVerificationGateTest {
         given(verificationService.hasPendingCode("quitter")).willReturn(true);
         given(commonService.getProperty(EmailSettings.VERIFICATION_TIMEOUT_SECONDS)).willReturn(0);
         given(commonService.getProperty(RegistrationSettings.MESSAGE_INTERVAL)).willReturn(5);
+        given(commonService.getProperty(RegistrationSettings.USE_DIALOG_UI)).willReturn(false);
         Runnable resume = mock(Runnable.class);
         gate.startGate(player, resume);
 
@@ -269,6 +286,7 @@ class EmailVerificationGateTest {
         given(playerCache.getAuth("nomail")).willReturn(auth);
         given(commonService.getProperty(EmailSettings.VERIFICATION_TIMEOUT_SECONDS)).willReturn(0);
         given(commonService.getProperty(RegistrationSettings.MESSAGE_INTERVAL)).willReturn(5);
+        given(commonService.getProperty(RegistrationSettings.USE_DIALOG_UI)).willReturn(false);
 
         // when
         gate.startGate(player, () -> { });
@@ -276,6 +294,157 @@ class EmailVerificationGateTest {
         // then: no code is sent (no address), binding hint is shown instead
         verify(verificationService, never()).sendCode(anyString(), anyString());
         verify(commonService).send(player, MessageKey.EMAIL_VERIFICATION_BINDING_REQUIRED);
+    }
+
+    @Test
+    void shouldShowVerificationDialogWhenDialogsEnabled() {
+        // given
+        Player player = mockPlayer("Bobby");
+        PlayerAuth auth = PlayerAuth.builder().name("bobby").email("b@example.com").build();
+        given(playerCache.getAuth("bobby")).willReturn(auth);
+        given(verificationService.hasPendingCode("bobby")).willReturn(true);
+        given(commonService.getProperty(EmailSettings.VERIFICATION_TIMEOUT_SECONDS)).willReturn(0);
+        given(commonService.getProperty(RegistrationSettings.MESSAGE_INTERVAL)).willReturn(5);
+        given(commonService.getProperty(RegistrationSettings.USE_DIALOG_UI)).willReturn(true);
+        given(dialogAdapter.isDialogSupported()).willReturn(true);
+        given(player.isOnline()).willReturn(true);
+        given(commonService.getProperty(EmailSettings.VERIFICATION_CODE_VALIDITY_MINUTES)).willReturn(10);
+        DialogWindowSpec spec = mock(DialogWindowSpec.class);
+        given(dialogWindowService.createEmailVerificationDialog(player, "b@example.com", 10)).willReturn(spec);
+
+        // when
+        gate.startGate(player, () -> { });
+
+        // then: a delayed task shows the verification dialog with the submit template
+        ArgumentCaptor<Runnable> captor = ArgumentCaptor.forClass(Runnable.class);
+        verify(bukkitService).runTaskLater(eq(player), captor.capture(), eq(1L));
+        captor.getValue().run();
+        verify(dialogAdapter).showEmailGateDialog(player, spec, "email verify $(code)");
+        verify(dialogStateService).markDialogOpen(player);
+    }
+
+    @Test
+    void shouldShowBindingDialogForPlayerWithoutEmail() {
+        // given
+        Player player = mockPlayer("NoMail");
+        PlayerAuth auth = PlayerAuth.builder().name("nomail").build();
+        given(playerCache.getAuth("nomail")).willReturn(auth);
+        given(commonService.getProperty(EmailSettings.VERIFICATION_TIMEOUT_SECONDS)).willReturn(0);
+        given(commonService.getProperty(RegistrationSettings.MESSAGE_INTERVAL)).willReturn(5);
+        given(commonService.getProperty(RegistrationSettings.USE_DIALOG_UI)).willReturn(true);
+        given(dialogAdapter.isDialogSupported()).willReturn(true);
+        given(player.isOnline()).willReturn(true);
+        DialogWindowSpec spec = mock(DialogWindowSpec.class);
+        given(dialogWindowService.createEmailBindingDialog(player)).willReturn(spec);
+
+        // when
+        gate.startGate(player, () -> { });
+
+        // then
+        ArgumentCaptor<Runnable> captor = ArgumentCaptor.forClass(Runnable.class);
+        verify(bukkitService).runTaskLater(eq(player), captor.capture(), eq(1L));
+        captor.getValue().run();
+        verify(dialogAdapter).showEmailGateDialog(player, spec, "email verify setemail $(email)");
+    }
+
+    @Test
+    void shouldNotShowDialogWhenDialogsDisabled() {
+        // given
+        Player player = mockPlayer("Bobby");
+        PlayerAuth auth = PlayerAuth.builder().name("bobby").email("b@example.com").build();
+        given(playerCache.getAuth("bobby")).willReturn(auth);
+        given(verificationService.hasPendingCode("bobby")).willReturn(true);
+        given(commonService.getProperty(EmailSettings.VERIFICATION_TIMEOUT_SECONDS)).willReturn(0);
+        given(commonService.getProperty(RegistrationSettings.MESSAGE_INTERVAL)).willReturn(5);
+        given(commonService.getProperty(RegistrationSettings.USE_DIALOG_UI)).willReturn(false);
+
+        // when
+        gate.startGate(player, () -> { });
+
+        // then
+        verify(dialogAdapter, never()).showEmailGateDialog(any(Player.class), any(DialogWindowSpec.class), anyString());
+        verify(bukkitService, never()).runTaskLater(eq(player), any(Runnable.class), eq(1L));
+    }
+
+    @Test
+    void shouldShowChangeEmailDialogForGatedPlayer() {
+        // given
+        Player player = mockPlayer("Gated");
+        PlayerAuth auth = PlayerAuth.builder().name("gated").email("g@example.com").build();
+        given(playerCache.getAuth("gated")).willReturn(auth);
+        given(verificationService.hasPendingCode("gated")).willReturn(true);
+        given(commonService.getProperty(EmailSettings.VERIFICATION_TIMEOUT_SECONDS)).willReturn(0);
+        given(commonService.getProperty(RegistrationSettings.MESSAGE_INTERVAL)).willReturn(5);
+        given(commonService.getProperty(RegistrationSettings.USE_DIALOG_UI)).willReturn(true);
+        given(dialogAdapter.isDialogSupported()).willReturn(true);
+        DialogWindowSpec spec = mock(DialogWindowSpec.class);
+        given(dialogWindowService.createEmailChangeForVerificationDialog(player)).willReturn(spec);
+        gate.startGate(player, () -> { });
+
+        // when
+        boolean shown = gate.showChangeEmailDialog(player);
+
+        // then
+        assertThat(shown, equalTo(true));
+        verify(dialogAdapter).showEmailGateDialog(player, spec, "email verify setemail $(email)");
+        verify(dialogStateService).markDialogOpen(player);
+    }
+
+    @Test
+    void shouldNotShowChangeEmailDialogWhenNotGated() {
+        // given
+        Player player = mockPlayer("Bobby");
+        given(commonService.getProperty(RegistrationSettings.USE_DIALOG_UI)).willReturn(true);
+        given(dialogAdapter.isDialogSupported()).willReturn(true);
+
+        // when
+        boolean shown = gate.showChangeEmailDialog(player);
+
+        // then
+        assertThat(shown, equalTo(false));
+        verify(dialogAdapter, never()).showEmailGateDialog(any(Player.class), any(DialogWindowSpec.class), anyString());
+    }
+
+    @Test
+    void shouldReshowGateDialogOnBack() {
+        // given
+        Player player = mockPlayer("Gated");
+        PlayerAuth auth = PlayerAuth.builder().name("gated").email("g@example.com").build();
+        given(playerCache.getAuth("gated")).willReturn(auth);
+        given(verificationService.hasPendingCode("gated")).willReturn(true);
+        given(commonService.getProperty(EmailSettings.VERIFICATION_TIMEOUT_SECONDS)).willReturn(0);
+        given(commonService.getProperty(RegistrationSettings.MESSAGE_INTERVAL)).willReturn(5);
+        given(commonService.getProperty(RegistrationSettings.USE_DIALOG_UI)).willReturn(true);
+        given(dialogAdapter.isDialogSupported()).willReturn(true);
+        given(player.isOnline()).willReturn(true);
+        given(commonService.getProperty(EmailSettings.VERIFICATION_CODE_VALIDITY_MINUTES)).willReturn(10);
+        DialogWindowSpec spec = mock(DialogWindowSpec.class);
+        given(dialogWindowService.createEmailVerificationDialog(player, "g@example.com", 10)).willReturn(spec);
+        gate.startGate(player, () -> { });
+
+        // when
+        boolean shown = gate.showGateDialogAgain(player);
+
+        // then: startGate and the back action both scheduled the delayed dialog show
+        assertThat(shown, equalTo(true));
+        ArgumentCaptor<Runnable> captor = ArgumentCaptor.forClass(Runnable.class);
+        verify(bukkitService, times(2)).runTaskLater(eq(player), captor.capture(), eq(1L));
+        captor.getValue().run();
+        verify(dialogAdapter).showEmailGateDialog(player, spec, "email verify $(code)");
+    }
+
+    @Test
+    void shouldNotReshowGateDialogWhenNotGated() {
+        // given
+        Player player = mockPlayer("Bobby");
+        given(commonService.getProperty(RegistrationSettings.USE_DIALOG_UI)).willReturn(true);
+        given(dialogAdapter.isDialogSupported()).willReturn(true);
+
+        // when
+        boolean shown = gate.showGateDialogAgain(player);
+
+        // then
+        assertThat(shown, equalTo(false));
     }
 
     private static Player mockPlayer(String name) {

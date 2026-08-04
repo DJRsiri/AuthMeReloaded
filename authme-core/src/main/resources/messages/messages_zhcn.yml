@@ -185,6 +185,22 @@ dialog:
     body: '&7请输入您注册的电子邮件地址，重置码将发送至该地址。'
     email: '&f电子邮件地址'
     button: '&a发送找回邮件'
+  email_verification:
+    title: '&6邮箱验证'
+    body: '&7验证码已发送至 &f%email&7，%validity 分钟内有效。'
+    code: '&f验证码'
+    button: '&a验证'
+    resend_button: '&e重新发送'
+    change_button: '&e更换邮箱'
+  email_binding:
+    title: '&6绑定邮箱'
+    body: '&7您的账户尚未绑定邮箱，请输入邮箱地址以继续。'
+    email: '&f电子邮件地址'
+    button: '&a绑定并发送验证码'
+  email_change:
+    title: '&6更换邮箱'
+    button: '&a保存并发送验证码'
+    back_button: '&e返回'
 
   button:
     cancel: '&c取消'

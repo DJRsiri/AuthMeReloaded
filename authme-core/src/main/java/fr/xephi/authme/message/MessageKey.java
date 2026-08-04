@@ -617,6 +617,45 @@ public enum MessageKey {
     /** Password recovery dialog submit button label. */
     DIALOG_RECOVERY_BUTTON("dialog.recovery.button"),
 
+    /** Email verification dialog title. */
+    DIALOG_EMAIL_VERIFICATION_TITLE("dialog.email_verification.title"),
+
+    /** Email verification dialog body text shown below the title. */
+    DIALOG_EMAIL_VERIFICATION_BODY("dialog.email_verification.body", "%email", "%validity"),
+
+    /** Email verification dialog code field label. */
+    DIALOG_EMAIL_VERIFICATION_CODE("dialog.email_verification.code"),
+
+    /** Email verification dialog submit button label. */
+    DIALOG_EMAIL_VERIFICATION_BUTTON("dialog.email_verification.button"),
+
+    /** Email verification dialog resend button label. */
+    DIALOG_EMAIL_VERIFICATION_RESEND_BUTTON("dialog.email_verification.resend_button"),
+
+    /** Email verification dialog change-email button label. */
+    DIALOG_EMAIL_VERIFICATION_CHANGE_BUTTON("dialog.email_verification.change_button"),
+
+    /** Email binding dialog title (player has no email address yet). */
+    DIALOG_EMAIL_BINDING_TITLE("dialog.email_binding.title"),
+
+    /** Email binding dialog body text shown below the title. */
+    DIALOG_EMAIL_BINDING_BODY("dialog.email_binding.body"),
+
+    /** Email binding dialog email field label. */
+    DIALOG_EMAIL_BINDING_EMAIL("dialog.email_binding.email"),
+
+    /** Email binding dialog submit button label. */
+    DIALOG_EMAIL_BINDING_BUTTON("dialog.email_binding.button"),
+
+    /** Email change dialog title (change address before verification). */
+    DIALOG_EMAIL_CHANGE_TITLE("dialog.email_change.title"),
+
+    /** Email change dialog submit button label. */
+    DIALOG_EMAIL_CHANGE_BUTTON("dialog.email_change.button"),
+
+    /** Email change dialog back button label. */
+    DIALOG_EMAIL_CHANGE_BACK_BUTTON("dialog.email_change.back_button"),
+
     /** Generic dialog cancel button label. */
     DIALOG_CANCEL_BUTTON("dialog.button.cancel"),
 
