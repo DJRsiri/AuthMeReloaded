@@ -2,6 +2,7 @@ package fr.xephi.authme.listener;
 
 import fr.xephi.authme.data.auth.PlayerCache;
 import fr.xephi.authme.datasource.DataSource;
+import fr.xephi.authme.service.EmailVerificationGate;
 import fr.xephi.authme.service.ValidationService;
 import fr.xephi.authme.settings.Settings;
 import fr.xephi.authme.settings.properties.RegistrationSettings;
@@ -43,10 +44,14 @@ class ListenerServiceTest {
     @Mock
     private ValidationService validationService;
 
+    @Mock
+    private EmailVerificationGate emailVerificationGate;
+
     @BeforeEach
     void setUpMocksAndService() {
         given(settings.getProperty(RegistrationSettings.FORCE)).willReturn(true);
-        listenerService = new ListenerService(settings, dataSource, playerCache, validationService);
+        listenerService = new ListenerService(settings, dataSource, playerCache, validationService,
+            emailVerificationGate);
     }
 
     @Test
@@ -152,8 +157,7 @@ class ListenerServiceTest {
     @Test
     void shouldAllowNpcPlayer() {
         // given
-        String playerName = "other_npc";
-        Player player = mockPlayerWithName(playerName);
+        Player player = mock(Player.class);
         EntityEvent event = mock(EntityEvent.class);
         given(event.getEntity()).willReturn(player);
         given(player.hasMetadata("NPC")).willReturn(true);
@@ -205,6 +209,25 @@ class ListenerServiceTest {
 
         // when
         boolean result = listenerService.shouldCancelEvent(player);
+
+        // then
+        assertThat(result, equalTo(true));
+        verify(playerCache).isAuthenticated(playerName);
+        verifyNoInteractions(dataSource);
+    }
+
+    @Test
+    void shouldCancelAuthenticatedPlayerHeldInEmailVerificationGate() {
+        // given
+        String playerName = "Gated";
+        Player player = mockPlayerWithName(playerName);
+        given(playerCache.isAuthenticated(playerName)).willReturn(true);
+        given(emailVerificationGate.isGated(playerName)).willReturn(true);
+        EntityEvent event = mock(EntityEvent.class);
+        given(event.getEntity()).willReturn(player);
+
+        // when
+        boolean result = listenerService.shouldCancelEvent(event);
 
         // then
         assertThat(result, equalTo(true));

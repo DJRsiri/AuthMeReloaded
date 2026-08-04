@@ -14,6 +14,7 @@ import fr.xephi.authme.platform.TeleportAdapter;
 import fr.xephi.authme.process.Management;
 import fr.xephi.authme.service.AntiBotService;
 import fr.xephi.authme.service.BukkitService;
+import fr.xephi.authme.service.EmailVerificationGate;
 import fr.xephi.authme.service.JoinMessageService;
 import fr.xephi.authme.service.TeleportationService;
 import fr.xephi.authme.service.ValidationService;
@@ -72,6 +73,9 @@ import static fr.xephi.authme.settings.properties.RestrictionSettings.ALLOW_UNAU
  */
 public class PlayerListener implements Listener {
 
+    /** Commands a player held in the email verification gate may still use. */
+    private static final Set<String> EMAIL_GATE_COMMANDS = Set.of("/email", "/logout", "/captcha");
+
     @Inject
     private Settings settings;
     @Inject
@@ -106,6 +110,8 @@ public class PlayerListener implements Listener {
     private ChatAdapter chatAdapter;
     @Inject
     private TeleportAdapter teleportAdapter;
+    @Inject
+    private EmailVerificationGate emailVerificationGate;
 
     // Lowest priority to apply fast protection checks
     @EventHandler(priority = EventPriority.LOWEST)
@@ -224,6 +230,7 @@ public class PlayerListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
+        emailVerificationGate.cancelGateOnQuit(player.getName());
 
         // Note: quit message can be null, despite api documentation says not
         if (settings.getProperty(RegistrationSettings.REMOVE_LEAVE_MESSAGE)) {
@@ -324,6 +331,9 @@ public class PlayerListener implements Listener {
             return;
         }
         final Player player = event.getPlayer();
+        if (emailVerificationGate.isGated(player.getName()) && EMAIL_GATE_COMMANDS.contains(cmd)) {
+            return;
+        }
         if (!quickCommandsProtectionManager.isAllowed(player.getName())) {
             event.setCancelled(true);
             player.kickPlayer(messages.retrieveSingle(player, MessageKey.QUICK_COMMAND_PROTECTION_KICK));

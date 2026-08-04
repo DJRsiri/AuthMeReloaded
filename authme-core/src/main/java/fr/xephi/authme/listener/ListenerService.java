@@ -3,6 +3,7 @@ package fr.xephi.authme.listener;
 import fr.xephi.authme.data.auth.PlayerCache;
 import fr.xephi.authme.datasource.DataSource;
 import fr.xephi.authme.initialization.SettingsDependent;
+import fr.xephi.authme.service.EmailVerificationGate;
 import fr.xephi.authme.service.ValidationService;
 import fr.xephi.authme.settings.Settings;
 import fr.xephi.authme.settings.properties.RegistrationSettings;
@@ -22,15 +23,17 @@ public class ListenerService implements SettingsDependent {
     private final DataSource dataSource;
     private final PlayerCache playerCache;
     private final ValidationService validationService;
+    private final EmailVerificationGate emailVerificationGate;
 
     private boolean isRegistrationForced;
 
     @Inject
     ListenerService(Settings settings, DataSource dataSource, PlayerCache playerCache,
-                    ValidationService validationService) {
+                    ValidationService validationService, EmailVerificationGate emailVerificationGate) {
         this.dataSource = dataSource;
         this.playerCache = playerCache;
         this.validationService = validationService;
+        this.emailVerificationGate = emailVerificationGate;
         reload(settings);
     }
 
@@ -77,7 +80,10 @@ public class ListenerService implements SettingsDependent {
      * @return true if the associated event should be canceled, false otherwise
      */
     public boolean shouldCancelEvent(Player player) {
-        return player != null && !checkAuth(player.getName()) && !PlayerUtils.isNpc(player);
+        if (player == null || PlayerUtils.isNpc(player)) {
+            return false;
+        }
+        return !checkAuth(player.getName()) || emailVerificationGate.isGated(player.getName());
     }
 
     @Override

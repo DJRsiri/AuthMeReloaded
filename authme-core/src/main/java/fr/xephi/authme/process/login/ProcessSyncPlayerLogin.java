@@ -13,6 +13,7 @@ import fr.xephi.authme.process.SynchronousProcess;
 import fr.xephi.authme.service.DialogStateService;
 import fr.xephi.authme.service.BukkitService;
 import fr.xephi.authme.service.CommonService;
+import fr.xephi.authme.service.EmailVerificationGate;
 import fr.xephi.authme.service.JoinMessageService;
 import fr.xephi.authme.service.TeleportationService;
 import fr.xephi.authme.service.bungeecord.BungeeSender;
@@ -66,6 +67,9 @@ public class ProcessSyncPlayerLogin implements SynchronousProcess {
     @Inject
     private PermissionsManager permissionsManager;
 
+    @Inject
+    private EmailVerificationGate emailVerificationGate;
+
     ProcessSyncPlayerLogin() {
     }
 
@@ -102,6 +106,12 @@ public class ProcessSyncPlayerLogin implements SynchronousProcess {
 
     private void processPlayerLogin(Player player, boolean isFirstLogin, List<String> authsWithSameIp,
                                     boolean proxyInitiated) {
+        if (emailVerificationGate.shouldEnforce(player)) {
+            emailVerificationGate.startGate(player, () ->
+                processPlayerLogin(player, isFirstLogin, authsWithSameIp, proxyInitiated));
+            return;
+        }
+
         if (dialogStateService.clearDialogOpen(player)) {
             dialogAdapter.closeDialog(player);
         }

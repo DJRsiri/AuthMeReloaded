@@ -13,6 +13,7 @@ import fr.xephi.authme.platform.TeleportAdapter;
 import fr.xephi.authme.process.Management;
 import fr.xephi.authme.service.AntiBotService;
 import fr.xephi.authme.service.BukkitService;
+import fr.xephi.authme.service.EmailVerificationGate;
 import fr.xephi.authme.service.JoinMessageService;
 import fr.xephi.authme.service.TeleportationService;
 import fr.xephi.authme.service.ValidationService;
@@ -139,6 +140,8 @@ class PlayerListenerTest {
     private ChatAdapter chatAdapter;
     @Mock
     private TeleportAdapter teleportAdapter;
+    @Mock
+    private EmailVerificationGate emailVerificationGate;
 
     @AfterEach
     void resetSpawnLocationTracker() throws ReflectiveOperationException {
@@ -349,6 +352,44 @@ class PlayerListenerTest {
         // then
         verify(event).setCancelled(true);
         verify(player).kickPlayer(messages.retrieveSingle(player, MessageKey.QUICK_COMMAND_PROTECTION_KICK));
+    }
+
+    @Test
+    void shouldAllowGateWhitelistedCommandForGatedPlayer() {
+        // given
+        given(settings.getProperty(HooksSettings.USE_ESSENTIALS_MOTD)).willReturn(false);
+        given(settings.getProperty(RestrictionSettings.ALLOW_COMMANDS)).willReturn(Collections.emptySet());
+        Player player = playerWithMockedServer();
+        given(player.getName()).willReturn("Gated");
+        given(emailVerificationGate.isGated("Gated")).willReturn(true);
+        PlayerCommandPreprocessEvent event = spy(new PlayerCommandPreprocessEvent(player, "/email verify 123456"));
+
+        // when
+        listener.onPlayerCommandPreprocess(event);
+
+        // then
+        verify(event, never()).setCancelled(anyBoolean());
+        verifyNoInteractions(listenerService, messages);
+    }
+
+    @Test
+    void shouldCancelNonWhitelistedCommandForGatedPlayer() {
+        // given
+        given(settings.getProperty(HooksSettings.USE_ESSENTIALS_MOTD)).willReturn(false);
+        given(settings.getProperty(RestrictionSettings.ALLOW_COMMANDS)).willReturn(Collections.emptySet());
+        Player player = playerWithMockedServer();
+        given(player.getName()).willReturn("Gated");
+        given(emailVerificationGate.isGated("Gated")).willReturn(true);
+        given(listenerService.shouldCancelEvent(player)).willReturn(true);
+        given(quickCommandsProtectionManager.isAllowed("Gated")).willReturn(true);
+        PlayerCommandPreprocessEvent event = spy(new PlayerCommandPreprocessEvent(player, "/hub"));
+
+        // when
+        listener.onPlayerCommandPreprocess(event);
+
+        // then
+        verify(event).setCancelled(true);
+        verify(messages).send(player, MessageKey.DENIED_COMMAND);
     }
 
     @Test
@@ -908,6 +949,22 @@ class PlayerListenerTest {
         assertThat(event.getQuitMessage(), equalTo(quitMessage));
         verify(antiBotService).wasPlayerKicked(name);
         verify(management).performQuit(player);
+    }
+
+    @Test
+    void shouldCancelEmailVerificationGateOnQuit() {
+        // given
+        String name = "Gated";
+        Player player = mockPlayerWithName(name);
+        given(settings.getProperty(RegistrationSettings.REMOVE_LEAVE_MESSAGE)).willReturn(true);
+        given(antiBotService.wasPlayerKicked(name)).willReturn(true);
+        PlayerQuitEvent event = new PlayerQuitEvent(player, "Player has quit the server");
+
+        // when
+        listener.onPlayerQuit(event);
+
+        // then
+        verify(emailVerificationGate).cancelGateOnQuit(name);
     }
 
     @Test
