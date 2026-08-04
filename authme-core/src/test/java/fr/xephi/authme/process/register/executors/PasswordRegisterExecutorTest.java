@@ -9,6 +9,7 @@ import fr.xephi.authme.security.PasswordSecurity;
 import fr.xephi.authme.security.crypts.HashedPassword;
 import fr.xephi.authme.service.BukkitService;
 import fr.xephi.authme.service.CommonService;
+import fr.xephi.authme.service.EmailVerificationService;
 import fr.xephi.authme.service.ValidationService;
 import fr.xephi.authme.service.ValidationService.ValidationResult;
 import fr.xephi.authme.settings.properties.PluginSettings;
@@ -30,6 +31,7 @@ import static org.hamcrest.Matchers.not;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
@@ -54,6 +56,8 @@ class PasswordRegisterExecutorTest {
     private SyncProcessManager syncProcessManager;
     @Mock
     private AsynchronousLogin asynchronousLogin;
+    @Mock
+    private EmailVerificationService emailVerificationService;
 
     @Test
     void shouldCheckPasswordValidity() {
@@ -139,6 +143,55 @@ class PasswordRegisterExecutorTest {
 
         // then
         verifyNoInteractions(bukkitService, asynchronousLogin);
+        verify(syncProcessManager).processSyncPasswordRegister(player);
+    }
+
+    @Test
+    void shouldSendVerificationCodeAfterRegisterWhenEmailGiven() {
+        // given
+        given(commonService.getProperty(RegistrationSettings.FORCE_LOGIN_AFTER_REGISTER)).willReturn(true);
+        given(emailVerificationService.isActive()).willReturn(true);
+        Player player = mock(Player.class);
+        given(player.getName()).willReturn("Bobby");
+        PasswordRegisterParams params = PasswordRegisterParams.of(player, "pass", "mail@example.org");
+
+        // when
+        executor.executePostPersistAction(params);
+
+        // then
+        verify(emailVerificationService).sendCode("Bobby", "mail@example.org");
+        verify(syncProcessManager).processSyncPasswordRegister(player);
+    }
+
+    @Test
+    void shouldNotSendVerificationCodeWithoutEmail() {
+        // given
+        given(commonService.getProperty(RegistrationSettings.FORCE_LOGIN_AFTER_REGISTER)).willReturn(true);
+        given(emailVerificationService.isActive()).willReturn(true);
+        Player player = mock(Player.class);
+        PasswordRegisterParams params = PasswordRegisterParams.of(player, "pass", null);
+
+        // when
+        executor.executePostPersistAction(params);
+
+        // then
+        verify(emailVerificationService, never()).sendCode(anyString(), anyString());
+        verify(syncProcessManager).processSyncPasswordRegister(player);
+    }
+
+    @Test
+    void shouldNotSendVerificationCodeWhenInactive() {
+        // given
+        given(commonService.getProperty(RegistrationSettings.FORCE_LOGIN_AFTER_REGISTER)).willReturn(true);
+        given(emailVerificationService.isActive()).willReturn(false);
+        Player player = mock(Player.class);
+        PasswordRegisterParams params = PasswordRegisterParams.of(player, "pass", "mail@example.org");
+
+        // when
+        executor.executePostPersistAction(params);
+
+        // then
+        verify(emailVerificationService, never()).sendCode(anyString(), anyString());
         verify(syncProcessManager).processSyncPasswordRegister(player);
     }
 

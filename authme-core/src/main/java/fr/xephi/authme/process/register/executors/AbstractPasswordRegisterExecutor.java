@@ -7,9 +7,11 @@ import fr.xephi.authme.security.PasswordSecurity;
 import fr.xephi.authme.security.crypts.HashedPassword;
 import fr.xephi.authme.service.BukkitService;
 import fr.xephi.authme.service.CommonService;
+import fr.xephi.authme.service.EmailVerificationService;
 import fr.xephi.authme.service.ValidationService;
 import fr.xephi.authme.settings.properties.PluginSettings;
 import fr.xephi.authme.settings.properties.RegistrationSettings;
+import fr.xephi.authme.util.Utils;
 import org.bukkit.entity.Player;
 
 import javax.inject.Inject;
@@ -47,6 +49,9 @@ abstract class AbstractPasswordRegisterExecutor<P extends AbstractPasswordRegist
 
     @Inject
     private AsynchronousLogin asynchronousLogin;
+
+    @Inject
+    private EmailVerificationService emailVerificationService;
 
     @Override
     public boolean isRegistrationAdmitted(P params) {
@@ -96,5 +101,20 @@ abstract class AbstractPasswordRegisterExecutor<P extends AbstractPasswordRegist
             }
         }
         syncProcessManager.processSyncPasswordRegister(player);
+
+        String email = getEmailForVerification(params);
+        if (emailVerificationService.isActive() && !Utils.isEmailEmpty(email)) {
+            emailVerificationService.sendCode(player.getName(), email);
+        }
+    }
+
+    /**
+     * Returns the email address a verification code should be sent to after registration.
+     *
+     * @param params the registration parameters
+     * @return the email address, or null if not applicable for this registration type
+     */
+    protected String getEmailForVerification(P params) {
+        return null;
     }
 }

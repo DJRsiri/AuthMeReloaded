@@ -58,7 +58,10 @@ class EmailRegisterExecutor implements RegistrationExecutor<EmailRegisterParams>
         String password = RandomStringUtils.generate(commonService.getProperty(RECOVERY_PASSWORD_LENGTH));
         HashedPassword hashedPassword = passwordSecurity.computeHash(password, params.getPlayer().getName());
         params.setPassword(password);
-        return createPlayerAuth(params.getPlayer(), hashedPassword, params.getEmail());
+        PlayerAuth auth = createPlayerAuth(params.getPlayer(), hashedPassword, params.getEmail());
+        // The password is sent to the email address: ownership is proven by registration
+        auth.setEmailVerified(true);
+        return auth;
     }
 
     @Override

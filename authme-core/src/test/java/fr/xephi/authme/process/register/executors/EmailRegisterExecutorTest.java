@@ -122,6 +122,8 @@ class EmailRegisterExecutorTest {
         assertThat(auth.getRegistrationIp(), equalTo("123.45.67.89"));
         assertIsCloseTo(auth.getRegistrationDate(), System.currentTimeMillis(), 1000);
         assertThat(auth.getPassword().getHash(), stringWithLength(12));
+        // Password is sent to the email address: ownership is proven by registration
+        assertThat(auth.isEmailVerified(), equalTo(true));
     }
 
     @Test

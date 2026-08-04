@@ -14,4 +14,9 @@ class PasswordRegisterExecutor extends AbstractPasswordRegisterExecutor<Password
         return createPlayerAuth(params.getPlayer(), params.getHashedPassword(), params.getEmail());
     }
 
+    @Override
+    protected String getEmailForVerification(PasswordRegisterParams params) {
+        return params.getEmail();
+    }
+
 }
