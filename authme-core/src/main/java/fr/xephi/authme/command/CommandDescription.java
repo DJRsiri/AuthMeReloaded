@@ -280,6 +280,19 @@ public class CommandDescription {
         }
 
         /**
+         * Add an argument that the command description requires. This method can be called multiples times to add
+         * multiple arguments. Use this overload to attach tab-completion suggestions to the argument.
+         *
+         * @param argument The argument description to add
+         *
+         * @return The builder
+         */
+        public CommandBuilder withArgument(CommandArgumentDescription argument) {
+            arguments.add(argument);
+            return this;
+        }
+
+        /**
          * Add a permission node that a user must have to execute the command.
          *
          * @param permission The PermissionNode to add

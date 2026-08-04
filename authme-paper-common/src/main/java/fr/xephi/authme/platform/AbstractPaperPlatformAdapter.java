@@ -6,6 +6,7 @@ import fr.xephi.authme.command.CommandHandler;
 import fr.xephi.authme.process.register.RegisterSecondaryArgument;
 import fr.xephi.authme.process.register.RegistrationType;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
@@ -71,7 +72,9 @@ public abstract class AbstractPaperPlatformAdapter extends AbstractSpigotPlatfor
 
     @Override
     public void registerCommands(AuthMe plugin, CommandHandler commandHandler, Collection<CommandDescription> commands) {
-        new PaperBrigadierCommandRegistrar(commandHandler::processCommand).registerCommands(plugin, commands);
+        new PaperBrigadierCommandRegistrar(commandHandler::processCommand,
+            () -> Bukkit.getOnlinePlayers().stream().map(Player::getName).toList())
+            .registerCommands(plugin, commands);
     }
 
     @Override

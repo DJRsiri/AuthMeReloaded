@@ -20,8 +20,11 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.lenient;
@@ -49,7 +52,7 @@ public class PaperBrigadierCommandRegistrarTest {
             executingSender.set(commandSender);
             executedCommands.add(parts);
             return true;
-        });
+        }, () -> List.of("Bobby", "ArcticFox_awa"));
         dispatcher = new CommandDispatcher<>();
         lenient().when(sourceStack.getSender()).thenReturn(sender);
 
@@ -113,6 +116,54 @@ public class PaperBrigadierCommandRegistrarTest {
             .getList().stream().map(suggestion -> suggestion.getText()).toList(), hasItem("reg"));
     }
 
+    @Test
+    public void shouldSuggestStaticValuesForArgumentWithSuggestions() {
+        List<String> texts = dispatcher.getCompletionSuggestions(
+                dispatcher.parse("authme emailverify ", sourceStack)).join()
+            .getList().stream().map(suggestion -> suggestion.getText()).toList();
+
+        assertThat(texts, hasItems("bypass", "set", "unverify", "status"));
+    }
+
+    @Test
+    public void shouldFilterStaticSuggestionsByPrefix() {
+        List<String> texts = dispatcher.getCompletionSuggestions(
+                dispatcher.parse("authme emailverify se", sourceStack)).join()
+            .getList().stream().map(suggestion -> suggestion.getText()).toList();
+
+        assertThat(texts, hasItem("set"));
+        assertThat(texts, not(hasItem("bypass")));
+        assertThat(texts, not(hasItem("status")));
+    }
+
+    @Test
+    public void shouldSuggestOnlinePlayersForArgumentWithPlayerSuggestions() {
+        List<String> texts = dispatcher.getCompletionSuggestions(
+                dispatcher.parse("authme emailverify status ", sourceStack)).join()
+            .getList().stream().map(suggestion -> suggestion.getText()).toList();
+
+        assertThat(texts, hasItems("Bobby", "ArcticFox_awa"));
+    }
+
+    @Test
+    public void shouldFilterOnlinePlayerSuggestionsByPrefix() {
+        List<String> texts = dispatcher.getCompletionSuggestions(
+                dispatcher.parse("authme emailverify status Bo", sourceStack)).join()
+            .getList().stream().map(suggestion -> suggestion.getText()).toList();
+
+        assertThat(texts, hasItem("Bobby"));
+        assertThat(texts, not(hasItem("ArcticFox_awa")));
+    }
+
+    @Test
+    public void shouldNotSuggestAnythingForArgumentWithoutSuggestions() {
+        List<String> texts = dispatcher.getCompletionSuggestions(
+                dispatcher.parse("login ", sourceStack)).join()
+            .getList().stream().map(suggestion -> suggestion.getText()).toList();
+
+        assertThat(texts, empty());
+    }
+
     private static Collection<CommandDescription> createCommands() {
         CommandDescription authmeBase = command(List.of("authme"), "AuthMe root", List.of(), List.of());
         CommandDescription authmeRegister = command(List.of("register", "reg"),
@@ -120,7 +171,15 @@ public class PaperBrigadierCommandRegistrarTest {
                 new CommandArgumentDescription("player", "Player name", false),
                 new CommandArgumentDescription("password", "Password", false)),
             List.of());
-        lenient().when(authmeBase.getChildren()).thenReturn(List.of(authmeRegister));
+        CommandDescription authmeEmailVerify = command(List.of("emailverify"),
+            "Manage email verification", List.of(
+                new CommandArgumentDescription("action", "Action", false)
+                    .withSuggestions("bypass", "set", "unverify", "status"),
+                new CommandArgumentDescription("player", "Player name", false)
+                    .withOnlinePlayerSuggestions(),
+                new CommandArgumentDescription("email", "Email address", true)),
+            List.of());
+        lenient().when(authmeBase.getChildren()).thenReturn(List.of(authmeRegister, authmeEmailVerify));
 
         CommandDescription loginBase = command(List.of("login", "l", "log"),
             "Login", List.of(new CommandArgumentDescription("password", "Password", false)), List.of());

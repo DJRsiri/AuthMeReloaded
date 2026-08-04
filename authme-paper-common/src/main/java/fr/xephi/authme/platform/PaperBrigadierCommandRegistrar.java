@@ -22,7 +22,9 @@ import org.bukkit.command.CommandSender;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.BiFunction;
+import java.util.function.Supplier;
 
 /**
  * Registers AuthMe commands in the Paper-derived Brigadier tree while delegating
@@ -35,9 +37,12 @@ final class PaperBrigadierCommandRegistrar {
     private static final String EXTRA_ARGUMENTS_NAME = "extraArgs";
 
     private final BiFunction<CommandSender, List<String>, Boolean> commandExecutor;
+    private final Supplier<Collection<String>> onlinePlayerNamesSupplier;
 
-    PaperBrigadierCommandRegistrar(BiFunction<CommandSender, List<String>, Boolean> commandExecutor) {
+    PaperBrigadierCommandRegistrar(BiFunction<CommandSender, List<String>, Boolean> commandExecutor,
+                                   Supplier<Collection<String>> onlinePlayerNamesSupplier) {
         this.commandExecutor = commandExecutor;
+        this.onlinePlayerNamesSupplier = onlinePlayerNamesSupplier;
     }
 
     void registerCommands(AuthMe plugin, Collection<CommandDescription> commands) {
@@ -100,12 +105,36 @@ final class PaperBrigadierCommandRegistrar {
                 RequiredArgumentBuilder.<CommandSourceStack, String>argument(argument.getName(),
                     isLastArgument ? StringArgumentType.greedyString() : anyWord())
                     .executes(this::executeInput);
+            if (!argument.getSuggestions().isEmpty() || argument.hasOnlinePlayerSuggestions()) {
+                argBuilder.suggests((context, suggestionBuilder) -> {
+                    collectSuggestions(argument, suggestionBuilder.getRemainingLowerCase())
+                        .forEach(suggestionBuilder::suggest);
+                    return suggestionBuilder.buildFuture();
+                });
+            }
             if (innerChain != null) {
                 argBuilder.then(innerChain);
             }
             innerChain = argBuilder.build();
         }
         parent.then(innerChain);
+    }
+
+    private List<String> collectSuggestions(CommandArgumentDescription argument, String remainingLowerCase) {
+        List<String> result = new ArrayList<>();
+        if (argument.hasOnlinePlayerSuggestions()) {
+            for (String name : onlinePlayerNamesSupplier.get()) {
+                if (name.toLowerCase(Locale.ROOT).startsWith(remainingLowerCase)) {
+                    result.add(name);
+                }
+            }
+        }
+        for (String suggestion : argument.getSuggestions()) {
+            if (suggestion.toLowerCase(Locale.ROOT).startsWith(remainingLowerCase)) {
+                result.add(suggestion);
+            }
+        }
+        return result;
     }
 
     private RequiredArgumentBuilder<CommandSourceStack, String> createFallbackArgument(String name) {
