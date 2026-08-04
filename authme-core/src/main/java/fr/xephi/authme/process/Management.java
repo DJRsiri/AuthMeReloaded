@@ -4,6 +4,7 @@ import fr.xephi.authme.process.changepassword.AsyncChangePassword;
 import fr.xephi.authme.process.email.AsyncAddEmail;
 import fr.xephi.authme.process.email.AsyncChangeEmail;
 import fr.xephi.authme.process.email.AsyncConfirmEmail;
+import fr.xephi.authme.process.email.AsyncEmailVerification;
 import fr.xephi.authme.process.join.AsynchronousJoin;
 import fr.xephi.authme.process.login.AsynchronousLogin;
 import fr.xephi.authme.process.logout.AsynchronousLogout;
@@ -48,6 +49,8 @@ public class Management {
     private AsyncChangePassword asyncChangePassword;
     @Inject
     private AsyncConfirmEmail asyncConfirmEmail;
+    @Inject
+    private AsyncEmailVerification asyncEmailVerification;
 
     Management() {
     }
@@ -101,6 +104,32 @@ public class Management {
 
     public void performConfirmEmail(Player player, String code) {
         runTask(() -> asyncConfirmEmail.confirmEmail(player, code));
+    }
+
+    /**
+     * Performs an email verification action ({@code submit}, {@code resend} or {@code setemail})
+     * for the player asynchronously.
+     *
+     * @param player the player to perform the action for
+     * @param action the action to perform
+     * @param argument the action argument (code or email address, null for resend)
+     */
+    public void performEmailVerification(Player player, String action, String argument) {
+        runTask(() -> {
+            switch (action) {
+                case "submit":
+                    asyncEmailVerification.submitCode(player, argument);
+                    break;
+                case "resend":
+                    asyncEmailVerification.resend(player);
+                    break;
+                case "setemail":
+                    asyncEmailVerification.setEmail(player, argument);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unknown email verification action '" + action + "'");
+            }
+        });
     }
 
     public void performPasswordChange(Player player, String oldPassword, String newPassword) {

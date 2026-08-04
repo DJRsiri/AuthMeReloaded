@@ -40,6 +40,7 @@ import fr.xephi.authme.command.executable.email.EmailSetPasswordCommand;
 import fr.xephi.authme.command.executable.email.ProcessCodeCommand;
 import fr.xephi.authme.command.executable.email.RecoverEmailCommand;
 import fr.xephi.authme.command.executable.email.ShowEmailCommand;
+import fr.xephi.authme.command.executable.email.VerifyEmailCommand;
 import fr.xephi.authme.command.executable.login.LoginCommand;
 import fr.xephi.authme.command.executable.logout.LogoutCommand;
 import fr.xephi.authme.command.executable.register.RegisterCommand;
@@ -621,6 +622,16 @@ public class CommandInitializer {
             .withArgument("code", "Confirmation code", MANDATORY)
             .permission(PlayerPermission.CONFIRM_EMAIL)
             .executableCommand(ConfirmEmailCommand.class)
+            .register();
+
+        // Register the verify email command
+        CommandDescription.builder()
+            .parent(emailBase)
+            .labels("verify", "verifyemail")
+            .description("Verify your email address")
+            .detailedDescription("Submit the code sent to your email address, resend it, or change the address.")
+            .withArgument("code | resend | setemail <email>", "Verification code or action", OPTIONAL)
+            .executableCommand(VerifyEmailCommand.class)
             .register();
 
         return emailBase;
