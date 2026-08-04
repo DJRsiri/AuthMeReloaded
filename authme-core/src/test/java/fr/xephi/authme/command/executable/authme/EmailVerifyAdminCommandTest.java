@@ -10,6 +10,7 @@ import fr.xephi.authme.service.CommonService;
 import fr.xephi.authme.service.EmailVerificationGate;
 import fr.xephi.authme.service.EmailVerificationService;
 import fr.xephi.authme.service.ValidationService;
+import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.junit.jupiter.api.Test;
@@ -233,9 +234,9 @@ class EmailVerifyAdminCommandTest {
 
         // then
         verify(commonService).send(sender, MessageKey.EMAIL_VERIFICATION_ADMIN_STATUS,
-            "Bobby", "b@example.com", "&ayes");
+            "Bobby", "b@example.com", ChatColor.GREEN + "yes");
         verify(commonService).send(sender, MessageKey.EMAIL_VERIFICATION_ADMIN_STATUS_PENDING,
-            "&ayes (&f125 &asec left)", "30");
+            ChatColor.GREEN + "yes (" + ChatColor.WHITE + "125" + ChatColor.GREEN + " sec left)", "30");
     }
 
     @Test
@@ -253,9 +254,9 @@ class EmailVerifyAdminCommandTest {
 
         // then
         verify(commonService).send(sender, MessageKey.EMAIL_VERIFICATION_ADMIN_STATUS,
-            "Bobby", "&cnone", "&cno");
+            "Bobby", ChatColor.RED + "none", ChatColor.RED + "no");
         verify(commonService).send(sender, MessageKey.EMAIL_VERIFICATION_ADMIN_STATUS_PENDING,
-            "&cno", "0");
+            ChatColor.RED + "no", "0");
     }
 
     @Test

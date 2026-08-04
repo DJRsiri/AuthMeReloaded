@@ -12,6 +12,7 @@ import fr.xephi.authme.service.EmailVerificationGate;
 import fr.xephi.authme.service.EmailVerificationService;
 import fr.xephi.authme.service.ValidationService;
 import fr.xephi.authme.util.Utils;
+import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -130,13 +131,13 @@ public class EmailVerifyAdminCommand implements ExecutableCommand {
                 return;
             }
             String displayName = auth.getRealName() == null ? name : auth.getRealName();
-            String email = Utils.isEmailEmpty(auth.getEmail()) ? "&cnone" : auth.getEmail();
-            String verified = auth.isEmailVerified() ? "&ayes" : "&cno";
+            String email = Utils.isEmailEmpty(auth.getEmail()) ? ChatColor.RED + "none" : auth.getEmail();
+            String verified = auth.isEmailVerified() ? ChatColor.GREEN + "yes" : ChatColor.RED + "no";
             commonService.send(sender, MessageKey.EMAIL_VERIFICATION_ADMIN_STATUS, displayName, email, verified);
             long pendingSeconds = verificationService.getPendingCodeRemainingSeconds(name);
             String pending = pendingSeconds > 0
-                ? "&ayes (&f" + pendingSeconds + " &asec left)"
-                : "&cno";
+                ? ChatColor.GREEN + "yes (" + ChatColor.WHITE + pendingSeconds + ChatColor.GREEN + " sec left)"
+                : ChatColor.RED + "no";
             commonService.send(sender, MessageKey.EMAIL_VERIFICATION_ADMIN_STATUS_PENDING,
                 pending, String.valueOf(verificationService.getPersonalCooldownRemainingSeconds(name)));
         });
