@@ -2,8 +2,10 @@ package fr.xephi.authme.platform;
 
 import fr.xephi.authme.process.register.RegisterSecondaryArgument;
 import fr.xephi.authme.process.register.RegistrationType;
+import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.dialog.MultiActionDialog;
 import net.md_5.bungee.api.dialog.action.RunCommandAction;
+import net.md_5.bungee.api.dialog.action.StaticAction;
 import org.bukkit.entity.Player;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -154,6 +156,60 @@ public class SpigotDialogHelperTest {
         // then
         RunCommandAction action = captureRunCommandAction(player);
         assertThat(action.template(), is("register $(email) $(confirm)"));
+    }
+
+    @Test
+    public void showEmailGateDialogUsesStaticActionForExtraButtonsWithoutVariables() {
+        // given
+        Player player = mock(Player.class);
+        DialogWindowSpec dialog = new DialogWindowSpec("Verify Email",
+            java.util.List.of(new DialogInputSpec("code", "Code", 16)),
+            "Verify",
+            "Cancel",
+            false,
+            false,
+            null,
+            null,
+            java.util.List.of(
+                new DialogButtonSpec("Resend", "email verify resend"),
+                new DialogButtonSpec("Cancel", "email verify cancel")));
+
+        // when
+        SpigotDialogHelper.showEmailGateDialog(player, dialog, "email verify $(code)");
+
+        // then: the primary button keeps the command template, static extras use plain run-command clicks
+        ArgumentCaptor<MultiActionDialog> captor = ArgumentCaptor.forClass(MultiActionDialog.class);
+        verify(player).showDialog(captor.capture());
+        assertThat(captor.getValue().actions().size(), is(3));
+        assertThat(((RunCommandAction) captor.getValue().actions().get(0).action()).template(),
+            is("email verify $(code)"));
+        StaticAction resendAction = (StaticAction) captor.getValue().actions().get(1).action();
+        assertThat(resendAction.clickEvent().getAction(), is(ClickEvent.Action.RUN_COMMAND));
+        assertThat(resendAction.clickEvent().getValue(), is("/email verify resend"));
+        StaticAction cancelAction = (StaticAction) captor.getValue().actions().get(2).action();
+        assertThat(cancelAction.clickEvent().getValue(), is("/email verify cancel"));
+    }
+
+    @Test
+    public void showLoginDialogUsesStaticActionForSecondaryCommandWithoutVariables() {
+        // given
+        Player player = mock(Player.class);
+        DialogWindowSpec dialog = new DialogWindowSpec("Login",
+            java.util.List.of(new DialogInputSpec("password", "Password", 100)),
+            "Login",
+            "Forgot Password?",
+            true,
+            false,
+            "email recover");
+
+        // when
+        SpigotDialogHelper.showLoginDialog(player, dialog);
+
+        // then
+        ArgumentCaptor<MultiActionDialog> captor = ArgumentCaptor.forClass(MultiActionDialog.class);
+        verify(player).showDialog(captor.capture());
+        StaticAction secondaryAction = (StaticAction) captor.getValue().actions().get(1).action();
+        assertThat(secondaryAction.clickEvent().getValue(), is("/email recover"));
     }
 
     private static RunCommandAction captureRunCommandAction(Player player) {

@@ -2,11 +2,14 @@ package fr.xephi.authme.platform;
 
 import fr.xephi.authme.process.register.RegisterSecondaryArgument;
 import fr.xephi.authme.process.register.RegistrationType;
+import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.dialog.DialogBase;
 import net.md_5.bungee.api.dialog.MultiActionDialog;
+import net.md_5.bungee.api.dialog.action.Action;
 import net.md_5.bungee.api.dialog.action.ActionButton;
 import net.md_5.bungee.api.dialog.action.RunCommandAction;
+import net.md_5.bungee.api.dialog.action.StaticAction;
 import net.md_5.bungee.api.dialog.body.DialogBody;
 import net.md_5.bungee.api.dialog.body.PlainMessageBody;
 import net.md_5.bungee.api.dialog.input.DialogInput;
@@ -35,10 +38,10 @@ final class SpigotDialogHelper {
             .afterAction(DialogBase.AfterAction.CLOSE);
 
         List<ActionButton> buttons = new ArrayList<>();
-        buttons.add(new ActionButton(toTextComponent(dialog.primaryButtonLabel()), new RunCommandAction("login $(password)")));
+        buttons.add(new ActionButton(toTextComponent(dialog.primaryButtonLabel()), createCommandAction("login $(password)")));
         if (dialog.showSecondaryButton() && dialog.secondaryButtonCommand() != null) {
             buttons.add(new ActionButton(toTextComponent(dialog.secondaryButtonLabel()),
-                new RunCommandAction(dialog.secondaryButtonCommand())));
+                createCommandAction(dialog.secondaryButtonCommand())));
         }
         player.showDialog(new MultiActionDialog(base, buttons.toArray(new ActionButton[0])));
     }
@@ -50,7 +53,7 @@ final class SpigotDialogHelper {
             .afterAction(DialogBase.AfterAction.CLOSE);
 
         player.showDialog(new MultiActionDialog(base,
-            new ActionButton(toTextComponent(dialog.primaryButtonLabel()), new RunCommandAction("2fa code $(code)"))));
+            new ActionButton(toTextComponent(dialog.primaryButtonLabel()), createCommandAction("2fa code $(code)"))));
     }
 
     static void showRegisterDialog(Player player, RegistrationType type, RegisterSecondaryArgument secondArg,
@@ -62,7 +65,7 @@ final class SpigotDialogHelper {
 
         player.showDialog(new MultiActionDialog(base,
             new ActionButton(toTextComponent(dialog.primaryButtonLabel()),
-                new RunCommandAction(createRegisterTemplate(type, secondArg)))));
+                createCommandAction(createRegisterTemplate(type, secondArg)))));
     }
 
     static void showEmailGateDialog(Player player, DialogWindowSpec dialog, String primaryTemplate) {
@@ -73,9 +76,9 @@ final class SpigotDialogHelper {
 
         List<ActionButton> buttons = new ArrayList<>();
         buttons.add(new ActionButton(toTextComponent(dialog.primaryButtonLabel()),
-            new RunCommandAction(primaryTemplate)));
+            createCommandAction(primaryTemplate)));
         for (DialogButtonSpec extra : dialog.extraButtons()) {
-            buttons.add(new ActionButton(toTextComponent(extra.label()), new RunCommandAction(extra.commandTemplate())));
+            buttons.add(new ActionButton(toTextComponent(extra.label()), createCommandAction(extra.commandTemplate())));
         }
         player.showDialog(new MultiActionDialog(base, buttons.toArray(new ActionButton[0])));
     }
@@ -115,6 +118,21 @@ final class SpigotDialogHelper {
             return "register $(password) $(email)";
         }
         return "register $(password)";
+    }
+
+    /**
+     * Creates the click action for a dialog button command. Commands with input references
+     * ({@code $(var)}) become dynamic command templates; plain commands become static
+     * run-command click events (templates without variables are rejected by the server).
+     *
+     * @param command the command or command template
+     * @return the action for the button
+     */
+    private static Action createCommandAction(String command) {
+        if (command.contains("$(")) {
+            return new RunCommandAction(command);
+        }
+        return new StaticAction(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/" + command));
     }
 
     private static TextComponent toTextComponent(String text) {

@@ -11,6 +11,7 @@ import io.papermc.paper.registry.data.dialog.input.DialogInput;
 import io.papermc.paper.registry.data.dialog.type.DialogType;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.entity.Player;
 
@@ -53,11 +54,11 @@ public final class PaperDialogHelper {
 
         List<ActionButton> buttons = new ArrayList<>();
         buttons.add(ActionButton.builder(legacyComponent(dialog.primaryButtonLabel()))
-            .action(DialogAction.commandTemplate(primaryTemplate))
+            .action(createCommandAction(primaryTemplate))
             .build());
         for (DialogButtonSpec extra : dialog.extraButtons()) {
             buttons.add(ActionButton.builder(legacyComponent(extra.label()))
-                .action(DialogAction.commandTemplate(extra.commandTemplate()))
+                .action(createCommandAction(extra.commandTemplate()))
                 .build());
         }
 
@@ -133,14 +134,14 @@ public final class PaperDialogHelper {
             .build();
 
         ActionButton primaryButton = ActionButton.builder(legacyComponent(dialog.primaryButtonLabel()))
-            .action(DialogAction.commandTemplate(commandTemplate))
+            .action(createCommandAction(commandTemplate))
             .build();
 
         List<ActionButton> buttons = new ArrayList<>();
         buttons.add(primaryButton);
         if (dialog.showSecondaryButton() && dialog.secondaryButtonCommand() != null) {
             buttons.add(ActionButton.builder(legacyComponent(dialog.secondaryButtonLabel()))
-                .action(DialogAction.commandTemplate(dialog.secondaryButtonCommand()))
+                .action(createCommandAction(dialog.secondaryButtonCommand()))
                 .build());
         }
 
@@ -195,6 +196,22 @@ public final class PaperDialogHelper {
             return "register $(password) $(email)";
         }
         return "register $(password)";
+    }
+
+    /**
+     * Creates the click action for a dialog button command. Commands with input references
+     * ({@code $(var)}) become dynamic command templates; plain commands become static
+     * run-command click events ({@link DialogAction#commandTemplate} rejects templates
+     * without variables).
+     *
+     * @param command the command or command template
+     * @return the action for the button
+     */
+    private static DialogAction createCommandAction(String command) {
+        if (command.contains("$(")) {
+            return DialogAction.commandTemplate(command);
+        }
+        return DialogAction.staticAction(ClickEvent.runCommand("/" + command));
     }
 
     private static Component legacyComponent(String text) {
