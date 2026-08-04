@@ -147,6 +147,7 @@ public class MessageUpdater {
             .put("recovery", "Password recovery by email")
             .put("captcha", "Captcha")
             .put("verification", "Verification code")
+            .put("email_verification", "Email ownership verification")
             .put("time", "Time units")
             .put("two_factor", "Two-factor authentication")
             .put("dialog", "Dialog UI")

@@ -72,6 +72,9 @@ public class AsyncConfirmEmail implements AsynchronousProcess {
         PlayerAuth auth = playerCache.getAuth(playerName);
         auth.setEmail(entry.email());
         if (dataSource.updateEmail(auth)) {
+            // Ownership of the address is proven by the confirmation code
+            auth.setEmailVerified(true);
+            dataSource.updateEmailVerified(auth);
             playerCache.updatePlayer(auth);
             service.send(player, MessageKey.EMAIL_CONFIRM_SUCCESS);
         } else {
