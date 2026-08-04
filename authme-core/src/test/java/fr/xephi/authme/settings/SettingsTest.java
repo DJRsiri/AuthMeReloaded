@@ -92,6 +92,24 @@ class SettingsTest {
         assertThat(result, equalTo(emailMessage));
     }
 
+    @Test
+    void shouldLoadEmailVerificationMessage() throws IOException {
+        // given
+        String emailMessage = "Verify your email with /email verify <generatedcode />.";
+        File emailFile = new File(testPluginFolder, "email_verification_email.html");
+        createFile(emailFile);
+        Files.write(emailFile.toPath(), emailMessage.getBytes());
+
+        PropertyResource resource = mockPropertyResourceAndReader();
+        Settings settings = new Settings(testPluginFolder, resource, null, CONFIG_DATA);
+
+        // when
+        String result = settings.getEmailVerificationMessage();
+
+        // then
+        assertThat(result, equalTo(emailMessage));
+    }
+
     private static PropertyResource mockPropertyResourceAndReader() {
         PropertyReader reader = mock(PropertyReader.class, RETURNS_DEEP_STUBS);
         given(reader.getList(anyString())).willReturn(Collections.emptyList());

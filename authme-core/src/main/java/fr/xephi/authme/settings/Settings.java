@@ -25,6 +25,7 @@ public class Settings extends SettingsManagerImpl {
     private String verificationEmailMessage;
     private String recoveryCodeEmailMessage;
     private String emailConfirmationMessage;
+    private String emailVerificationMessage;
 
     /**
      * Constructor.
@@ -77,11 +78,21 @@ public class Settings extends SettingsManagerImpl {
         return emailConfirmationMessage;
     }
 
+    /**
+     * Return the text to use for registration email ownership verification.
+     *
+     * @return The email message
+     */
+    public String getEmailVerificationMessage() {
+        return emailVerificationMessage;
+    }
+
     private void loadSettingsFromFiles() {
         passwordEmailMessage = readFile("email.html");
         verificationEmailMessage = readFile("verification_code_email.html");
         recoveryCodeEmailMessage = readFile("recovery_code_email.html");
         emailConfirmationMessage = readFile("email_confirmation_email.html");
+        emailVerificationMessage = readFile("email_verification_email.html");
     }
 
     @Override

@@ -132,7 +132,7 @@ public class EmailService {
         }
 
         String mailText = replaceTagsForVerificationEmail(
-            settings.getVerificationEmailMessage(), name, code, validityMinutes);
+            settings.getEmailVerificationMessage(), name, code, validityMinutes);
         return sendMailSsl.sendEmail(mailText, email);
     }
 

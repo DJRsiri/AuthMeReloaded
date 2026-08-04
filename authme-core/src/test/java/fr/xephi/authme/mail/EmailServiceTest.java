@@ -165,7 +165,7 @@ class EmailServiceTest {
     void shouldSendEmailVerificationMail() throws EmailException {
         // given
         given(settings.getProperty(PluginSettings.SERVER_NAME)).willReturn("serverName");
-        given(settings.getVerificationEmailMessage())
+        given(settings.getEmailVerificationMessage())
             .willReturn("Hi <playername />, your code on <servername /> is <generatedcode />"
                 + " (valid <minutesvalid /> minutes)");
         HtmlEmail email = mock(HtmlEmail.class);
