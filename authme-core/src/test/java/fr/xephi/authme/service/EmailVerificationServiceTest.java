@@ -245,6 +245,30 @@ class EmailVerificationServiceTest {
         assertThat(auth.isEmailVerified(), equalTo(false));
     }
 
+    @Test
+    void shouldReturnPendingCodeRemainingSeconds() {
+        // given
+        given(emailService.sendEmailVerificationMail(anyString(), anyString(), anyString(), anyInt()))
+            .willReturn(true);
+        EmailVerificationService service = createService();
+        service.sendCode("Player", "p@example.com");
+
+        // when
+        long remaining = service.getPendingCodeRemainingSeconds("player");
+
+        // then: 10 minutes validity, so close to 600 seconds
+        assertThat(remaining > 590 && remaining <= 600, equalTo(true));
+    }
+
+    @Test
+    void shouldReturnZeroPendingSecondsWhenNoCodeIsPending() {
+        // given
+        EmailVerificationService service = createService();
+
+        // when/then
+        assertThat(service.getPendingCodeRemainingSeconds("player"), equalTo(0L));
+    }
+
     private EmailVerificationService createService() {
         return new EmailVerificationService(settings, dataSource, emailService, playerCache);
     }

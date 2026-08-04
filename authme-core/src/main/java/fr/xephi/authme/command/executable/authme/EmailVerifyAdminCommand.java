@@ -1,6 +1,7 @@
 package fr.xephi.authme.command.executable.authme;
 
 import fr.xephi.authme.command.ExecutableCommand;
+import fr.xephi.authme.data.auth.PlayerAuth;
 import fr.xephi.authme.data.auth.PlayerCache;
 import fr.xephi.authme.data.limbo.LimboService;
 import fr.xephi.authme.datasource.DataSource;
@@ -10,6 +11,7 @@ import fr.xephi.authme.service.CommonService;
 import fr.xephi.authme.service.EmailVerificationGate;
 import fr.xephi.authme.service.EmailVerificationService;
 import fr.xephi.authme.service.ValidationService;
+import fr.xephi.authme.util.Utils;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -65,6 +67,9 @@ public class EmailVerifyAdminCommand implements ExecutableCommand {
             case "unverify":
                 performUnverify(sender, name);
                 break;
+            case "status":
+                performStatus(sender, name);
+                break;
             default:
                 commonService.send(sender, MessageKey.UNKNOWN_COMMAND);
         }
@@ -114,6 +119,26 @@ public class EmailVerifyAdminCommand implements ExecutableCommand {
                     gate.startGate(player, () -> limboService.restoreData(player));
                 });
             }
+        });
+    }
+
+    private void performStatus(CommandSender sender, String name) {
+        bukkitService.runTaskAsynchronously(() -> {
+            PlayerAuth auth = dataSource.getAuth(name);
+            if (auth == null) {
+                commonService.send(sender, MessageKey.UNKNOWN_USER);
+                return;
+            }
+            String displayName = auth.getRealName() == null ? name : auth.getRealName();
+            String email = Utils.isEmailEmpty(auth.getEmail()) ? "&cnone" : auth.getEmail();
+            String verified = auth.isEmailVerified() ? "&ayes" : "&cno";
+            commonService.send(sender, MessageKey.EMAIL_VERIFICATION_ADMIN_STATUS, displayName, email, verified);
+            long pendingSeconds = verificationService.getPendingCodeRemainingSeconds(name);
+            String pending = pendingSeconds > 0
+                ? "&ayes (&f" + pendingSeconds + " &asec left)"
+                : "&cno";
+            commonService.send(sender, MessageKey.EMAIL_VERIFICATION_ADMIN_STATUS_PENDING,
+                pending, String.valueOf(verificationService.getPersonalCooldownRemainingSeconds(name)));
         });
     }
 

@@ -1,5 +1,6 @@
 package fr.xephi.authme.command.executable.authme;
 
+import fr.xephi.authme.data.auth.PlayerAuth;
 import fr.xephi.authme.data.auth.PlayerCache;
 import fr.xephi.authme.data.limbo.LimboService;
 import fr.xephi.authme.datasource.DataSource;
@@ -214,5 +215,61 @@ class EmailVerifyAdminCommandTest {
         // then
         verify(commonService).send(sender, MessageKey.UNKNOWN_COMMAND);
         verifyNoInteractions(dataSource, verificationService, gate, bukkitService);
+    }
+
+    @Test
+    void shouldShowStatusForVerifiedPlayerWithPendingCode() {
+        // given
+        CommandSender sender = mock(CommandSender.class);
+        PlayerAuth auth = PlayerAuth.builder().name("bobby").realName("Bobby")
+            .email("b@example.com").emailVerified(true).build();
+        given(dataSource.getAuth("bobby")).willReturn(auth);
+        given(verificationService.getPendingCodeRemainingSeconds("bobby")).willReturn(125L);
+        given(verificationService.getPersonalCooldownRemainingSeconds("bobby")).willReturn(30L);
+        setBukkitServiceToRunTaskAsynchronously(bukkitService);
+
+        // when
+        command.executeCommand(sender, Arrays.asList("status", "bobby"));
+
+        // then
+        verify(commonService).send(sender, MessageKey.EMAIL_VERIFICATION_ADMIN_STATUS,
+            "Bobby", "b@example.com", "&ayes");
+        verify(commonService).send(sender, MessageKey.EMAIL_VERIFICATION_ADMIN_STATUS_PENDING,
+            "&ayes (&f125 &asec left)", "30");
+    }
+
+    @Test
+    void shouldShowStatusForUnverifiedPlayerWithoutEmail() {
+        // given
+        CommandSender sender = mock(CommandSender.class);
+        PlayerAuth auth = PlayerAuth.builder().name("bobby").realName("Bobby").build();
+        given(dataSource.getAuth("bobby")).willReturn(auth);
+        given(verificationService.getPendingCodeRemainingSeconds("bobby")).willReturn(0L);
+        given(verificationService.getPersonalCooldownRemainingSeconds("bobby")).willReturn(0L);
+        setBukkitServiceToRunTaskAsynchronously(bukkitService);
+
+        // when
+        command.executeCommand(sender, Arrays.asList("status", "bobby"));
+
+        // then
+        verify(commonService).send(sender, MessageKey.EMAIL_VERIFICATION_ADMIN_STATUS,
+            "Bobby", "&cnone", "&cno");
+        verify(commonService).send(sender, MessageKey.EMAIL_VERIFICATION_ADMIN_STATUS_PENDING,
+            "&cno", "0");
+    }
+
+    @Test
+    void shouldSendUnknownUserForStatusOfMissingAuth() {
+        // given
+        CommandSender sender = mock(CommandSender.class);
+        given(dataSource.getAuth("ghost")).willReturn(null);
+        setBukkitServiceToRunTaskAsynchronously(bukkitService);
+
+        // when
+        command.executeCommand(sender, Arrays.asList("status", "ghost"));
+
+        // then
+        verify(commonService).send(sender, MessageKey.UNKNOWN_USER);
+        verifyNoInteractions(verificationService, gate);
     }
 }

@@ -121,6 +121,8 @@ email_verification:
   binding_required: '&3You must bind an email address to play. Set it with: &f/email verify setemail <email>'
   email_changed: '&2Your email address has been updated to &f%email&2. A new verification code has been sent.'
   admin_success: '&2Done.'
+  admin_status: '&7Status of &f%player&7: email &f%email&7, verified: %status'
+  admin_status_pending: '&7Pending code: %pending&7, resend cooldown: &f%cooldown &7seconds'
   usage: '&cUsage: /email verify <code | resend | setemail <email>>'
 
 # Password recovery by email

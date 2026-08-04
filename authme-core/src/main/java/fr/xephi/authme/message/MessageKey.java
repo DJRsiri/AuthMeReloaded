@@ -307,6 +307,12 @@ public enum MessageKey {
     /** Email verification admin action completed. */
     EMAIL_VERIFICATION_ADMIN_SUCCESS("email_verification.admin_success"),
 
+    /** Email verification status of %player: email %email, verified %status. */
+    EMAIL_VERIFICATION_ADMIN_STATUS("email_verification.admin_status", "%player", "%email", "%status"),
+
+    /** Pending code: %pending, resend cooldown: %cooldown seconds. */
+    EMAIL_VERIFICATION_ADMIN_STATUS_PENDING("email_verification.admin_status_pending", "%pending", "%cooldown"),
+
     /** Usage: /email verify &lt;code | resend | setemail &lt;email&gt;&gt; */
     USAGE_EMAIL_VERIFY("email_verification.usage"),
 

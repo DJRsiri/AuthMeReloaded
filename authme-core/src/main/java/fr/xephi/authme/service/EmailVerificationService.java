@@ -102,6 +102,21 @@ public class EmailVerificationService implements SettingsDependent, HasCleanup {
     }
 
     /**
+     * Returns the remaining validity of the player's pending verification code, in seconds.
+     *
+     * @param name the player name
+     * @return remaining validity in seconds, 0 if no valid pending code exists
+     */
+    public long getPendingCodeRemainingSeconds(String name) {
+        PendingVerification pv = pendingCodes.get(name.toLowerCase(Locale.ROOT));
+        if (pv == null) {
+            return 0;
+        }
+        long remainingMs = pv.expiresAt() - System.currentTimeMillis();
+        return remainingMs <= 0 ? 0 : (remainingMs + 999) / 1000;
+    }
+
+    /**
      * Generates a verification code and sends it to the given email address,
      * respecting the personal and global send cooldowns.
      *
