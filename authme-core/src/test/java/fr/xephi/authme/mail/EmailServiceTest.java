@@ -25,6 +25,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -52,6 +53,9 @@ class EmailServiceTest {
 
     @BeforeEach
     void initFieldsAndService() {
+        // Lenient defaults: used by every template replacement, but not all tests reach it
+        lenient().when(settings.getProperty(EmailSettings.MAIL_BACKGROUND_START)).thenReturn("#8080ff");
+        lenient().when(settings.getProperty(EmailSettings.MAIL_BACKGROUND_END)).thenReturn("#e89eff");
         emailService = new EmailService(dataFolder, settings, sendMailSsl);
     }
 
@@ -165,9 +169,11 @@ class EmailServiceTest {
     void shouldSendEmailVerificationMail() throws EmailException {
         // given
         given(settings.getProperty(PluginSettings.SERVER_NAME)).willReturn("serverName");
+        given(settings.getProperty(EmailSettings.MAIL_BACKGROUND_START)).willReturn("#111111");
+        given(settings.getProperty(EmailSettings.MAIL_BACKGROUND_END)).willReturn("#222222");
         given(settings.getEmailVerificationMessage())
-            .willReturn("Hi <playername />, your code on <servername /> is <generatedcode />"
-                + " (valid <minutesvalid /> minutes)");
+            .willReturn("<body bgcolor=\"<bgcolor1 />\">Hi <playername />, your code on <servername /> is <generatedcode />"
+                + " (valid <minutesvalid /> minutes, bg <bgcolor2 />)");
         HtmlEmail email = mock(HtmlEmail.class);
         given(sendMailSsl.hasAllInformation()).willReturn(true);
         given(sendMailSsl.initializeMail(anyString())).willReturn(email);
@@ -182,7 +188,7 @@ class EmailServiceTest {
         ArgumentCaptor<String> messageCaptor = ArgumentCaptor.forClass(String.class);
         verify(sendMailSsl).sendEmail(messageCaptor.capture(), eq(email));
         assertThat(messageCaptor.getValue(),
-            equalTo("Hi Bobby, your code on serverName is 123456 (valid 10 minutes)"));
+            equalTo("<body bgcolor=\"#111111\">Hi Bobby, your code on serverName is 123456 (valid 10 minutes, bg #222222)"));
     }
 
     @Test

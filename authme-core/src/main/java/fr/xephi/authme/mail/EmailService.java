@@ -199,14 +199,14 @@ public class EmailService {
     }
 
     private String replaceTagsForPasswordMail(String mailText, String name, String newPass) {
-        return mailText
+        return replaceBackgroundTags(mailText)
             .replace("<playername />", name)
             .replace("<servername />", settings.getProperty(PluginSettings.SERVER_NAME))
             .replace("<generatedpass />", newPass);
     }
 
     private String replaceTagsForVerificationEmail(String mailText, String name, String code, int minutesValid) {
-        return mailText
+        return replaceBackgroundTags(mailText)
             .replace("<playername />", name)
             .replace("<servername />", settings.getProperty(PluginSettings.SERVER_NAME))
             .replace("<generatedcode />", code)
@@ -214,10 +214,16 @@ public class EmailService {
     }
 
     private String replaceTagsForRecoveryCodeMail(String mailText, String name, String code, int hoursValid) {
-        return mailText
+        return replaceBackgroundTags(mailText)
             .replace("<playername />", name)
             .replace("<servername />", settings.getProperty(PluginSettings.SERVER_NAME))
             .replace("<recoverycode />", code)
             .replace("<hoursvalid />", String.valueOf(hoursValid));
+    }
+
+    private String replaceBackgroundTags(String mailText) {
+        return mailText
+            .replace("<bgcolor1 />", settings.getProperty(EmailSettings.MAIL_BACKGROUND_START))
+            .replace("<bgcolor2 />", settings.getProperty(EmailSettings.MAIL_BACKGROUND_END));
     }
 }

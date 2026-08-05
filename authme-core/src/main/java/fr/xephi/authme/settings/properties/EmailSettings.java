@@ -46,6 +46,16 @@ public final class EmailSettings implements SettingsHolder {
     public static final Property<String> MAIL_SENDER_NAME =
         newProperty("Email.mailSenderName", "");
 
+    @Comment({"Background gradient start color of the HTML email templates,",
+        "replacing the <bgcolor1 /> tag (also the solid fallback color)"})
+    public static final Property<String> MAIL_BACKGROUND_START =
+        newProperty("Email.mailBackgroundStart", "#8080ff");
+
+    @Comment({"Background gradient end color of the HTML email templates, replacing the <bgcolor2 /> tag.",
+        "Set it to the same value as mailBackgroundStart for a solid background"})
+    public static final Property<String> MAIL_BACKGROUND_END =
+        newProperty("Email.mailBackgroundEnd", "#e89eff");
+
     @Comment("Recovery password length")
     public static final Property<Integer> RECOVERY_PASSWORD_LENGTH =
         newProperty("Email.RecoveryPasswordLength", 8);
