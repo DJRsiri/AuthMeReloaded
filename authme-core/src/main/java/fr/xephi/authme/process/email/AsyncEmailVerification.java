@@ -115,8 +115,12 @@ public class AsyncEmailVerification implements AsynchronousProcess {
             service.send(player, MessageKey.INVALID_EMAIL);
             return;
         }
-        service.send(player, MessageKey.EMAIL_VERIFICATION_EMAIL_CHANGED, email);
-        handleSendResult(player, verificationService.changeEmailAndResend(player.getName(), email), email);
+        EmailVerificationService.SendCodeResult result =
+            verificationService.changeEmailAndResend(player.getName(), email);
+        if (result == EmailVerificationService.SendCodeResult.SENT) {
+            service.send(player, MessageKey.EMAIL_VERIFICATION_EMAIL_CHANGED, email);
+        }
+        handleSendResult(player, result, email);
     }
 
     private void handleSendResult(Player player, EmailVerificationService.SendCodeResult result, String email) {

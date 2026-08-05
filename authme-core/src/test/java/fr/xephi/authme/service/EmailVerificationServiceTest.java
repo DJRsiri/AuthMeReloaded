@@ -175,6 +175,7 @@ class EmailVerificationServiceTest {
     @Test
     void shouldChangeEmailAndSendNewCode() {
         // given
+        given(settings.getProperty(EmailSettings.VERIFICATION_PERSONAL_COOLDOWN_MS)).willReturn(0L);
         given(settings.getProperty(EmailSettings.VERIFICATION_GLOBAL_COOLDOWN_MS)).willReturn(0L);
         given(emailService.sendEmailVerificationMail(anyString(), anyString(), anyString(), anyInt()))
             .willReturn(true);
@@ -192,6 +193,23 @@ class EmailVerificationServiceTest {
         assertThat(auth.getEmail(), equalTo("new@example.com"));
         verify(dataSource).updateEmail(auth);
         verify(emailService).sendEmailVerificationMail(eq("Player"), eq("new@example.com"), anyString(), eq(10));
+    }
+
+    @Test
+    void shouldRejectEmailChangeWithinPersonalCooldown() {
+        // given
+        given(emailService.sendEmailVerificationMail(anyString(), anyString(), anyString(), anyInt()))
+            .willReturn(true);
+        EmailVerificationService service = createService();
+        service.sendCode("Player", "old@example.com");
+
+        // when
+        EmailVerificationService.SendCodeResult result = service.changeEmailAndResend("Player", "new@example.com");
+
+        // then: the change is rejected before the address is touched
+        assertThat(result, equalTo(EmailVerificationService.SendCodeResult.PERSONAL_COOLDOWN));
+        verify(dataSource, never()).updateEmail(any());
+        verify(emailService).sendEmailVerificationMail(eq("Player"), eq("old@example.com"), anyString(), eq(10));
     }
 
     @Test

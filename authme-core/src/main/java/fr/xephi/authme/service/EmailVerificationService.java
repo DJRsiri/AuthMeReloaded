@@ -194,6 +194,8 @@ public class EmailVerificationService implements SettingsDependent, HasCleanup {
 
     /**
      * Changes the player's email address and sends a verification code to the new address.
+     * Subject to the personal send cooldown: while it is active the request is rejected
+     * and the address is left unchanged.
      *
      * @param playerName the player name
      * @param newEmail the new email address
@@ -201,6 +203,10 @@ public class EmailVerificationService implements SettingsDependent, HasCleanup {
      */
     public SendCodeResult changeEmailAndResend(String playerName, String newEmail) {
         String name = playerName.toLowerCase(Locale.ROOT);
+        PendingVerification existing = pendingCodes.get(name);
+        if (existing != null && System.currentTimeMillis() - existing.lastSentAt() < personalCooldownMs) {
+            return SendCodeResult.PERSONAL_COOLDOWN;
+        }
         PlayerAuth auth = getAuth(name);
         if (auth == null) {
             return SendCodeResult.SEND_FAILED;

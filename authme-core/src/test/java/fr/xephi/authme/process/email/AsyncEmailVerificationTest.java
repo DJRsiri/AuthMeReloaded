@@ -374,8 +374,8 @@ class AsyncEmailVerificationTest {
         // when
         asyncEmailVerification.setEmail(player, "new@example.com");
 
-        // then
-        verify(service).send(player, MessageKey.EMAIL_VERIFICATION_EMAIL_CHANGED, "new@example.com");
+        // then: the address was not changed, so no confirmation may be shown
+        verify(service, never()).send(player, MessageKey.EMAIL_VERIFICATION_EMAIL_CHANGED, "new@example.com");
         verify(service).send(player, MessageKey.EMAIL_VERIFICATION_RESEND_COOLDOWN, "7");
     }
 
