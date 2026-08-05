@@ -646,7 +646,9 @@ public class CommandInitializer {
             .labels("verify", "verifyemail")
             .description("Verify your email address")
             .detailedDescription("Submit the code sent to your email address, resend it, or change the address.")
-            .withArgument("code | resend | setemail <email>", "Verification code or action", OPTIONAL)
+            .withArgument(new CommandArgumentDescription("code | resend | setemail", "Verification code or action", OPTIONAL)
+                .withSuggestions("resend", "setemail", "cancel", "change", "back"))
+            .withArgument("email", "New email address (for setemail)", OPTIONAL)
             .executableCommand(VerifyEmailCommand.class)
             .register();
 

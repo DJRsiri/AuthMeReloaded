@@ -4,6 +4,7 @@ import fr.xephi.authme.command.TestCommandsUtil.TestLoginCommand;
 import fr.xephi.authme.command.TestCommandsUtil.TestRegisterCommand;
 import fr.xephi.authme.command.TestCommandsUtil.TestUnregisterCommand;
 import fr.xephi.authme.command.executable.HelpCommand;
+import fr.xephi.authme.command.executable.email.VerifyEmailCommand;
 import fr.xephi.authme.permission.PermissionNode;
 import fr.xephi.authme.permission.PermissionsManager;
 import org.bukkit.command.CommandSender;
@@ -313,6 +314,24 @@ class CommandMapperTest {
         // then
         assertThat(commandClasses, containsInAnyOrder(ExecutableCommand.class, HelpCommand.class,
             TestLoginCommand.class, TestRegisterCommand.class, TestUnregisterCommand.class));
+    }
+
+    @Test
+    void shouldMapEmailVerifySetemailAgainstRealCommandTree() {
+        // given: /email verify setemail <email> sends two argument words
+        CommandMapper realMapper = new CommandMapper(new CommandInitializer(), permissionsManager);
+        CommandSender sender = mock(CommandSender.class);
+        given(permissionsManager.hasPermission(eq(sender), isNull())).willReturn(true);
+
+        // when
+        FoundCommandResult result = realMapper.mapPartsToCommand(sender,
+            asList("email", "verify", "setemail", "new@example.com"));
+
+        // then
+        assertThat(result.getResultStatus(), equalTo(FoundResultStatus.SUCCESS));
+        assertThat(result.getCommandDescription().getExecutableCommand(),
+            equalTo((Class) VerifyEmailCommand.class));
+        assertThat(result.getArguments(), contains("setemail", "new@example.com"));
     }
 
 }
