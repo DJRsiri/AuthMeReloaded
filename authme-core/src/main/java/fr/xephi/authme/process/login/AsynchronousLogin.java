@@ -26,6 +26,7 @@ import fr.xephi.authme.service.BukkitService;
 import fr.xephi.authme.service.CommonService;
 import fr.xephi.authme.service.DialogStateService;
 import fr.xephi.authme.service.DialogWindowService;
+import fr.xephi.authme.service.EmailVerificationService;
 import fr.xephi.authme.service.SessionService;
 import fr.xephi.authme.service.bungeecord.BungeeSender;
 import fr.xephi.authme.service.bungeecord.MessageType;
@@ -97,6 +98,9 @@ public class AsynchronousLogin implements AsynchronousProcess {
 
     @Inject
     private DialogStateService dialogStateService;
+
+    @Inject
+    private EmailVerificationService emailVerificationService;
 
     AsynchronousLogin() {
     }
@@ -347,7 +351,10 @@ public class AsynchronousLogin implements AsynchronousProcess {
             dataSource.setLogged(name);
             sessionService.grantSession(name);
 
-            if (bungeeSender.isEnabled()) {
+            if (bungeeSender.isEnabled() && !emailVerificationService.isVerificationRequired(auth)) {
+                // Only notify the proxy once the player may actually play: while the email
+                // verification gate is active, the proxy must not mark the player as authenticated,
+                // otherwise they could switch servers and bypass email verification.
                 // As described at https://www.spigotmc.org/wiki/bukkit-bungee-plugin-messaging-channel/
                 // "Keep in mind that you can't send plugin messages directly after a player joins."
                 bukkitService.scheduleSyncDelayedTask(player, () ->

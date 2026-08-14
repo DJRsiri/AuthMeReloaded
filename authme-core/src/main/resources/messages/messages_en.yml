@@ -118,6 +118,7 @@ email_verification:
   cancel_kick: '&cEmail verification canceled.'
   send_failed: '&cThe verification email could not be sent. Please try again with /email verify resend or contact an administrator.'
   required: '&3Please verify your email address (&f%email&3). A code was sent to it - submit it with: &f/email verify <code>&3. To resend: &f/email verify resend'
+  code_still_valid: '&3A verification code is already pending and valid for &f%time&3 seconds. Submit it with: &f/email verify <code>'
   binding_required: '&3You must bind an email address to play. Set it with: &f/email verify setemail <email>'
   email_changed: '&2Your email address has been updated to &f%email&2. A new verification code has been sent.'
   admin_success: '&2Done.'

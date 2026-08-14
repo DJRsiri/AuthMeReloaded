@@ -10,6 +10,8 @@ import fr.xephi.authme.service.CommonService;
 import fr.xephi.authme.service.EmailVerificationGate;
 import fr.xephi.authme.service.EmailVerificationService;
 import fr.xephi.authme.service.ValidationService;
+import fr.xephi.authme.service.bungeecord.BungeeSender;
+import fr.xephi.authme.service.bungeecord.MessageType;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -65,6 +67,9 @@ class EmailVerifyAdminCommandTest {
     @Mock
     private PlayerCache playerCache;
 
+    @Mock
+    private BungeeSender bungeeSender;
+
     @Test
     void shouldBypassVerificationAndReleaseGatedPlayer() {
         // given
@@ -99,6 +104,27 @@ class EmailVerifyAdminCommandTest {
         verify(verificationService).markVerified("bobby");
         verify(commonService).send(sender, MessageKey.EMAIL_VERIFICATION_ADMIN_SUCCESS);
         verify(gate, never()).completeGate(any(Player.class));
+    }
+
+    @Test
+    void shouldSendLoginToProxyForAuthenticatedNonGatedPlayerOnBypass() {
+        // given
+        CommandSender sender = mock(CommandSender.class);
+        Player player = mock(Player.class);
+        given(dataSource.isAuthAvailable("bobby")).willReturn(true);
+        given(bukkitService.getPlayerExact("bobby")).willReturn(player);
+        given(gate.isGated("bobby")).willReturn(false);
+        given(playerCache.isAuthenticated("bobby")).willReturn(true);
+        given(bungeeSender.isEnabled()).willReturn(true);
+        setBukkitServiceToRunTaskAsynchronously(bukkitService);
+
+        // when
+        command.executeCommand(sender, Arrays.asList("bypass", "bobby"));
+
+        // then: the proxy is told the player is authenticated so a stuck player can switch servers again
+        verify(verificationService).markVerified("bobby");
+        verify(commonService).send(sender, MessageKey.EMAIL_VERIFICATION_ADMIN_SUCCESS);
+        verify(bungeeSender).sendAuthMeBungeecordMessage(player, MessageType.LOGIN);
     }
 
     @Test

@@ -16,15 +16,19 @@ import fr.xephi.authme.permission.PlayerStatePermission;
 import fr.xephi.authme.platform.DialogAdapter;
 import fr.xephi.authme.platform.DialogInputSpec;
 import fr.xephi.authme.platform.DialogWindowSpec;
+import fr.xephi.authme.process.SyncProcessManager;
 import fr.xephi.authme.security.PasswordSecurity;
 import fr.xephi.authme.service.BukkitService;
 import fr.xephi.authme.service.CancellableTask;
 import fr.xephi.authme.service.CommonService;
 import fr.xephi.authme.service.DialogStateService;
 import fr.xephi.authme.service.DialogWindowService;
+import fr.xephi.authme.service.EmailVerificationService;
 import fr.xephi.authme.service.SessionService;
 import fr.xephi.authme.service.bungeecord.BungeeSender;
+import fr.xephi.authme.service.bungeecord.MessageType;
 import fr.xephi.authme.settings.properties.DatabaseSettings;
+import fr.xephi.authme.settings.properties.EmailSettings;
 import fr.xephi.authme.settings.properties.HooksSettings;
 import fr.xephi.authme.settings.properties.PluginSettings;
 import fr.xephi.authme.settings.properties.RegistrationSettings;
@@ -45,6 +49,7 @@ import java.util.List;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -92,6 +97,10 @@ class AsynchronousLoginTest {
     private DialogWindowService dialogWindowService;
     @Mock
     private DialogStateService dialogStateService;
+    @Mock
+    private SyncProcessManager syncProcessManager;
+    @Mock
+    private EmailVerificationService emailVerificationService;
 
     @BeforeAll
     static void initLogger() {
@@ -325,6 +334,63 @@ class AsynchronousLoginTest {
         verify(limboService).resetMessageTask(player, LimboMessageType.TOTP_CODE);
         verify(limboPlayer).setState(LimboPlayerState.TOTP_REQUIRED);
         verify(dialogAdapter, never()).showTotpDialog(eq(player), any(DialogWindowSpec.class));
+    }
+
+    @Test
+    void shouldNotNotifyProxyWhenEmailUnverifiedOnLogin() {
+        // given
+        Player player = mockPlayer("bobby");
+        TestHelper.mockIpAddressToPlayer(player, "203.0.113.5");
+        PlayerAuth auth = PlayerAuth.builder().name("bobby").build();
+        given(playerCache.isAuthenticated("bobby")).willReturn(false);
+        given(dataSource.getAuth("bobby")).willReturn(auth);
+        given(commonService.getProperty(DatabaseSettings.MYSQL_COL_GROUP)).willReturn("");
+        given(commonService.getProperty(RestrictionSettings.MAX_LOGIN_PER_IP)).willReturn(0);
+        given(commonService.getProperty(PluginSettings.USE_ASYNC_TASKS)).willReturn(false);
+        given(loginCaptchaManager.isCaptchaRequired("bobby")).willReturn(false);
+        given(passwordSecurity.comparePassword("hunter2", auth.getPassword(), "bobby")).willReturn(true);
+        given(player.isOnline()).willReturn(true);
+        given(commonService.getProperty(EmailSettings.RECALL_PLAYERS)).willReturn(false);
+        given(commonService.getProperty(RestrictionSettings.DISPLAY_OTHER_ACCOUNTS)).willReturn(false);
+        given(bungeeSender.isEnabled()).willReturn(true);
+        given(emailVerificationService.isVerificationRequired(auth)).willReturn(true);
+
+        // when
+        asynchronousLogin.login(player, "hunter2");
+
+        // then: the proxy is not told the player is authenticated while the email is unverified
+        verify(bungeeSender, never()).sendAuthMeBungeecordMessage(player, MessageType.LOGIN);
+        verify(syncProcessManager).processSyncPlayerLogin(eq(player), eq(true), anyList());
+    }
+
+    @Test
+    void shouldNotifyProxyWhenEmailVerifiedOnLogin() {
+        // given
+        Player player = mockPlayer("bobby");
+        TestHelper.mockIpAddressToPlayer(player, "203.0.113.5");
+        PlayerAuth auth = PlayerAuth.builder().name("bobby").email("b@example.com").emailVerified(true).build();
+        given(playerCache.isAuthenticated("bobby")).willReturn(false);
+        given(dataSource.getAuth("bobby")).willReturn(auth);
+        given(commonService.getProperty(DatabaseSettings.MYSQL_COL_GROUP)).willReturn("");
+        given(commonService.getProperty(RestrictionSettings.MAX_LOGIN_PER_IP)).willReturn(0);
+        given(commonService.getProperty(PluginSettings.USE_ASYNC_TASKS)).willReturn(false);
+        given(loginCaptchaManager.isCaptchaRequired("bobby")).willReturn(false);
+        given(passwordSecurity.comparePassword("hunter2", auth.getPassword(), "bobby")).willReturn(true);
+        given(player.isOnline()).willReturn(true);
+        given(commonService.getProperty(EmailSettings.RECALL_PLAYERS)).willReturn(false);
+        given(commonService.getProperty(RestrictionSettings.DISPLAY_OTHER_ACCOUNTS)).willReturn(false);
+        given(bungeeSender.isEnabled()).willReturn(true);
+        given(emailVerificationService.isVerificationRequired(auth)).willReturn(false);
+        doAnswer(invocation -> {
+            invocation.<Runnable>getArgument(1).run();
+            return null;
+        }).when(bukkitService).scheduleSyncDelayedTask(eq(player), any(Runnable.class), eq(5L));
+
+        // when
+        asynchronousLogin.login(player, "hunter2");
+
+        // then: the proxy is told the player is authenticated so they may switch servers
+        verify(bungeeSender).sendAuthMeBungeecordMessage(player, MessageType.LOGIN);
     }
 
     private static Player mockPlayer(String name) {

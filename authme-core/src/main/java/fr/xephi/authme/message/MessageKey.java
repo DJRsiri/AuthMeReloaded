@@ -298,6 +298,9 @@ public enum MessageKey {
     /** Please verify your email address (%email); a code was sent to it. */
     EMAIL_VERIFICATION_REQUIRED("email_verification.required", "%email"),
 
+    /** A verification code is already pending and remains valid for %time seconds. */
+    EMAIL_VERIFICATION_CODE_STILL_VALID("email_verification.code_still_valid", "%time"),
+
     /** You must bind an email address to play. */
     EMAIL_VERIFICATION_BINDING_REQUIRED("email_verification.binding_required"),
 

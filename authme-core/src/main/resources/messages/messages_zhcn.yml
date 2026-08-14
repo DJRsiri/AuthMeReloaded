@@ -119,6 +119,7 @@ email_verification:
   cancel_kick: '&c邮箱验证已取消。'
   send_failed: '&c验证邮件发送失败，请使用 /email verify resend 重试或联系管理员。'
   required: '&3请验证你的邮箱（&f%email&3）。验证码已发送，使用 &f/email verify <验证码>&3 提交；重新发送：&f/email verify resend'
+  code_still_valid: '&3已有验证码仍在有效期内（剩余&f%time&3秒）。使用 &f/email verify <验证码>&3 提交'
   binding_required: '&3你需要绑定邮箱才能游玩，请使用 &f/email verify setemail <邮箱>&3 绑定。'
   email_changed: '&2邮箱已更新为 &f%email&2，新的验证码已发送。'
   admin_success: '&2操作完成。'

@@ -6,6 +6,8 @@ import fr.xephi.authme.data.limbo.LimboService;
 import fr.xephi.authme.message.MessageKey;
 import fr.xephi.authme.platform.DialogAdapter;
 import fr.xephi.authme.platform.DialogWindowSpec;
+import fr.xephi.authme.service.bungeecord.BungeeSender;
+import fr.xephi.authme.service.bungeecord.MessageType;
 import fr.xephi.authme.settings.properties.EmailSettings;
 import fr.xephi.authme.settings.properties.RegistrationSettings;
 import org.bukkit.entity.Player;
@@ -23,6 +25,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -58,12 +61,15 @@ class EmailVerificationGateTest {
     @Mock
     private DialogStateService dialogStateService;
 
+    @Mock
+    private BungeeSender bungeeSender;
+
     private EmailVerificationGate gate;
 
     @BeforeEach
     void createGate() {
         gate = new EmailVerificationGate(verificationService, commonService, bukkitService,
-            limboService, playerCache, dialogAdapter, dialogWindowService, dialogStateService);
+            limboService, playerCache, dialogAdapter, dialogWindowService, dialogStateService, bungeeSender);
     }
 
     @Test
@@ -105,6 +111,50 @@ class EmailVerificationGateTest {
         // then
         verify(verificationService, never()).sendCode(anyString(), anyString());
         assertThat(gate.isGated("pending"), equalTo(true));
+    }
+
+    @Test
+    void shouldNotifyAboutStillValidCodeWhenPending() {
+        // given
+        Player player = mockPlayer("Returner");
+        PlayerAuth auth = PlayerAuth.builder().name("returner").email("r@example.com").build();
+        given(playerCache.getAuth("returner")).willReturn(auth);
+        given(verificationService.hasPendingCode("returner")).willReturn(true);
+        given(verificationService.getPendingCodeRemainingSeconds("returner")).willReturn(42L);
+        given(commonService.getProperty(EmailSettings.VERIFICATION_TIMEOUT_SECONDS)).willReturn(0);
+        given(commonService.getProperty(RegistrationSettings.MESSAGE_INTERVAL)).willReturn(5);
+        given(commonService.getProperty(RegistrationSettings.USE_DIALOG_UI)).willReturn(false);
+
+        // when
+        gate.startGate(player, () -> { });
+
+        // then: the pending code is reused, no new mail is sent, and the player is told it is still valid
+        verify(verificationService, never()).sendCode(anyString(), anyString());
+        verify(commonService).send(player, MessageKey.EMAIL_VERIFICATION_CODE_STILL_VALID, "42");
+    }
+
+    @Test
+    void shouldNotifyProxyAuthenticationWhenGateCompletes() {
+        // given
+        Player player = mockPlayer("Done");
+        PlayerAuth auth = PlayerAuth.builder().name("done").email("d@example.com").build();
+        given(playerCache.getAuth("done")).willReturn(auth);
+        given(verificationService.hasPendingCode("done")).willReturn(true);
+        given(commonService.getProperty(EmailSettings.VERIFICATION_TIMEOUT_SECONDS)).willReturn(0);
+        given(commonService.getProperty(RegistrationSettings.MESSAGE_INTERVAL)).willReturn(5);
+        given(commonService.getProperty(RegistrationSettings.USE_DIALOG_UI)).willReturn(false);
+        given(bungeeSender.isEnabled()).willReturn(true);
+        doAnswer(invocation -> {
+            invocation.<Runnable>getArgument(1).run();
+            return null;
+        }).when(bukkitService).scheduleSyncDelayedTask(eq(player), any(Runnable.class), eq(5L));
+        gate.startGate(player, () -> { });
+
+        // when
+        gate.completeGate(player);
+
+        // then: the proxy is told the player is now authenticated and may switch servers
+        verify(bungeeSender).sendAuthMeBungeecordMessage(player, MessageType.LOGIN);
     }
 
     @Test

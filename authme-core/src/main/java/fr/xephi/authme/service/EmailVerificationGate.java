@@ -5,6 +5,8 @@ import fr.xephi.authme.data.auth.PlayerCache;
 import fr.xephi.authme.data.limbo.LimboService;
 import fr.xephi.authme.message.MessageKey;
 import fr.xephi.authme.platform.DialogAdapter;
+import fr.xephi.authme.service.bungeecord.BungeeSender;
+import fr.xephi.authme.service.bungeecord.MessageType;
 import fr.xephi.authme.settings.properties.EmailSettings;
 import fr.xephi.authme.settings.properties.RegistrationSettings;
 import fr.xephi.authme.util.Utils;
@@ -31,6 +33,7 @@ public class EmailVerificationGate {
     private final DialogAdapter dialogAdapter;
     private final DialogWindowService dialogWindowService;
     private final DialogStateService dialogStateService;
+    private final BungeeSender bungeeSender;
 
     private final Map<String, GateSession> sessions = new ConcurrentHashMap<>();
 
@@ -38,7 +41,7 @@ public class EmailVerificationGate {
     EmailVerificationGate(EmailVerificationService verificationService, CommonService commonService,
                           BukkitService bukkitService, LimboService limboService, PlayerCache playerCache,
                           DialogAdapter dialogAdapter, DialogWindowService dialogWindowService,
-                          DialogStateService dialogStateService) {
+                          DialogStateService dialogStateService, BungeeSender bungeeSender) {
         this.verificationService = verificationService;
         this.commonService = commonService;
         this.bukkitService = bukkitService;
@@ -47,6 +50,7 @@ public class EmailVerificationGate {
         this.dialogAdapter = dialogAdapter;
         this.dialogWindowService = dialogWindowService;
         this.dialogStateService = dialogStateService;
+        this.bungeeSender = bungeeSender;
     }
 
     /**
@@ -93,6 +97,10 @@ public class EmailVerificationGate {
                 handleSendFailure(player, resumeAction);
                 return;
             }
+        } else if (!bindingRequired) {
+            // A code is still pending: reuse it and tell the player, instead of sending a new mail
+            long remaining = verificationService.getPendingCodeRemainingSeconds(name);
+            commonService.send(player, MessageKey.EMAIL_VERIFICATION_CODE_STILL_VALID, String.valueOf(remaining));
         }
 
         int timeoutSeconds = commonService.getProperty(EmailSettings.VERIFICATION_TIMEOUT_SECONDS);
@@ -123,6 +131,21 @@ public class EmailVerificationGate {
         }
         cancelTasks(session);
         bukkitService.scheduleSyncTaskFromOptionallyAsyncTask(player, session.resumeAction());
+        notifyProxyAuthenticated(player);
+    }
+
+    /**
+     * Tells the proxy the player is now authenticated so they may switch servers again.
+     * The login flow skips this message for gated players; it is sent here on release.
+     * Deferred like the login flow, because plugin messages cannot be sent right after a join.
+     *
+     * @param player the player that completed the gate
+     */
+    private void notifyProxyAuthenticated(Player player) {
+        if (bungeeSender.isEnabled()) {
+            bukkitService.scheduleSyncDelayedTask(player, () ->
+                bungeeSender.sendAuthMeBungeecordMessage(player, MessageType.LOGIN), 5L);
+        }
     }
 
     /**

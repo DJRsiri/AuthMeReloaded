@@ -11,6 +11,8 @@ import fr.xephi.authme.service.CommonService;
 import fr.xephi.authme.service.EmailVerificationGate;
 import fr.xephi.authme.service.EmailVerificationService;
 import fr.xephi.authme.service.ValidationService;
+import fr.xephi.authme.service.bungeecord.BungeeSender;
+import fr.xephi.authme.service.bungeecord.MessageType;
 import fr.xephi.authme.util.Utils;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -49,6 +51,9 @@ public class EmailVerifyAdminCommand implements ExecutableCommand {
 
     @Inject
     private PlayerCache playerCache;
+
+    @Inject
+    private BungeeSender bungeeSender;
 
     @Override
     public void executeCommand(CommandSender sender, List<String> arguments) {
@@ -145,8 +150,20 @@ public class EmailVerifyAdminCommand implements ExecutableCommand {
 
     private void releaseGateIfHeld(String name) {
         Player player = bukkitService.getPlayerExact(name);
-        if (player != null && gate.isGated(name)) {
+        if (player == null) {
+            return;
+        }
+        if (gate.isGated(name)) {
             gate.completeGate(player);
+            return;
+        }
+        if (playerCache.isAuthenticated(name)) {
+            // Authenticated but not in the gate: the proxy may never have learned about the
+            // authentication (email verified out-of-band). Tell it now so a stuck player can
+            // switch servers again.
+            if (bungeeSender.isEnabled()) {
+                bungeeSender.sendAuthMeBungeecordMessage(player, MessageType.LOGIN);
+            }
         }
     }
 }
