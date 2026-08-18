@@ -264,6 +264,58 @@ class EmailVerificationServiceTest {
     }
 
     @Test
+    void shouldNotAddOfflinePlayerToCacheOnForceSetEmail() {
+        // given
+        PlayerAuth auth = PlayerAuth.builder().name("Player").email("old@example.com").build();
+        given(playerCache.getAuth("player")).willReturn(null);
+        given(dataSource.getAuth("player")).willReturn(auth);
+        EmailVerificationService service = createService();
+
+        // when
+        service.forceSetEmail("Player", "forced@example.com");
+
+        // then: the database is updated, but the player is not inserted into the online cache
+        assertThat(auth.isEmailVerified(), equalTo(true));
+        verify(dataSource).updateEmail(auth);
+        verify(dataSource).updateEmailVerified(auth);
+        verify(playerCache, never()).updatePlayer(any());
+    }
+
+    @Test
+    void shouldNotAddOfflinePlayerToCacheOnUnverify() {
+        // given
+        PlayerAuth auth = PlayerAuth.builder().name("Player").email("old@example.com").emailVerified(true).build();
+        given(playerCache.getAuth("player")).willReturn(null);
+        given(dataSource.getAuth("player")).willReturn(auth);
+        EmailVerificationService service = createService();
+
+        // when
+        service.unverify("Player");
+
+        // then: the database is updated, but the player is not inserted into the online cache
+        assertThat(auth.isEmailVerified(), equalTo(false));
+        verify(dataSource).updateEmailVerified(auth);
+        verify(playerCache, never()).updatePlayer(any());
+    }
+
+    @Test
+    void shouldNotAddOfflinePlayerToCacheOnMarkVerified() {
+        // given
+        PlayerAuth auth = PlayerAuth.builder().name("Player").email("old@example.com").build();
+        given(playerCache.getAuth("player")).willReturn(null);
+        given(dataSource.getAuth("player")).willReturn(auth);
+        EmailVerificationService service = createService();
+
+        // when
+        service.markVerified("Player");
+
+        // then: the database is updated, but the player is not inserted into the online cache
+        assertThat(auth.isEmailVerified(), equalTo(true));
+        verify(dataSource).updateEmailVerified(auth);
+        verify(playerCache, never()).updatePlayer(any());
+    }
+
+    @Test
     void shouldReturnPendingCodeRemainingSeconds() {
         // given
         given(emailService.sendEmailVerificationMail(anyString(), anyString(), anyString(), anyInt()))

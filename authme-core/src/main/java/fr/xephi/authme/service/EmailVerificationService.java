@@ -215,7 +215,7 @@ public class EmailVerificationService implements SettingsDependent, HasCleanup {
         if (!dataSource.updateEmail(auth)) {
             return SendCodeResult.SEND_FAILED;
         }
-        playerCache.updatePlayer(auth);
+        updatePlayerCacheIfPresent(name, auth);
         pendingCodes.remove(name); // the old code for the old address is invalidated
         return sendCode(playerName, newEmail);
     }
@@ -245,7 +245,7 @@ public class EmailVerificationService implements SettingsDependent, HasCleanup {
         auth.setEmailVerified(true);
         dataSource.updateEmail(auth);
         dataSource.updateEmailVerified(auth);
-        playerCache.updatePlayer(auth);
+        updatePlayerCacheIfPresent(name, auth);
         pendingCodes.remove(name);
     }
 
@@ -262,7 +262,7 @@ public class EmailVerificationService implements SettingsDependent, HasCleanup {
         }
         auth.setEmailVerified(false);
         dataSource.updateEmailVerified(auth);
-        playerCache.updatePlayer(auth);
+        updatePlayerCacheIfPresent(name, auth);
     }
 
     public int getMaxAttempts() {
@@ -282,12 +282,22 @@ public class EmailVerificationService implements SettingsDependent, HasCleanup {
         }
         auth.setEmailVerified(true);
         dataSource.updateEmailVerified(auth);
-        playerCache.updatePlayer(auth);
+        updatePlayerCacheIfPresent(name, auth);
     }
 
     private PlayerAuth getAuth(String name) {
         PlayerAuth auth = playerCache.getAuth(name);
         return auth != null ? auth : dataSource.getAuth(name);
+    }
+
+    /**
+     * Updates the cache only for players who are already cached. Admin edits can target offline
+     * accounts, and a PlayerCache entry means the player is treated as authenticated.
+     */
+    private void updatePlayerCacheIfPresent(String name, PlayerAuth auth) {
+        if (playerCache.getAuth(name) != null) {
+            playerCache.updatePlayer(auth);
+        }
     }
 
     @Override
